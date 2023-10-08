@@ -18,7 +18,7 @@ payment_processing/settings/environments/local.py
 *.local.py
 *.local.*
 .env
-
+database.db
 
 # JetBrains IDE
 .idea/
@@ -37,5 +37,4 @@ venv
 
 Pipfile
 Pipfile.lock
-```
-# Fix
+
