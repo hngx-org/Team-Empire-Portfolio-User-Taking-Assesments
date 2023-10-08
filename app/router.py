@@ -2,10 +2,11 @@ from fastapi import APIRouter, Response, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment,fetch_questions
+# from app.services.external import check_for_assessment,fetch_questions
 from app.services.user_assessment import get_user_assessments_from_db
+from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
 
 
 # Create a router object
@@ -295,6 +296,24 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
     }
     return response
 
+
+@router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
+async def get_assessment_result(
+    assessment_id,
+    user_id,
+    db: Session = Depends(get_db)
+):
+
+    score, status, answers = await get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
+    
+    response = {
+        "score": score,
+        "status": status,
+        "answers": answers
+    }
+    
+
+    return response
 
 @router.get("/user", response_model=List[UserAssessmentResponse])
 async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db)):
