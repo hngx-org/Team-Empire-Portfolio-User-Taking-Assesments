@@ -295,3 +295,21 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
     }
     return response
 
+
+@router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
+async def get_assessment_result(
+    assessment_id,
+    user_id,
+    db: Session = Depends(get_db)
+):
+
+    score, status, answers = await get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
+    
+    response = {
+        "score": score,
+        "status": status,
+        "answers": answers
+    }
+    
+
+    return response
