@@ -2,7 +2,7 @@ from fastapi import APIRouter, Response, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-# from app.services.external import check_for_assessment,fetch_questions
+from app.services.external import check_for_assessment,fetch_questions
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
