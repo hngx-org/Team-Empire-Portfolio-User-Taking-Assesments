@@ -59,6 +59,22 @@ class AssessmentSessionData(AssessmentSession):
 
 # save session details
 def save_session(data: SessionData, user_id: int):
+
+    """
+    Save session details:
+        This function saves the session details of a user
+
+    Parameters:
+    - data : SessionData
+        SessionData object
+    - user_id : int
+        user id of the user
+
+    Returns:
+    - status_code : int
+        status code of the response
+
+    """
     global session_progress_db, user_session_db
 
     # check if there is previous draft in the db
@@ -81,6 +97,19 @@ def save_session(data: SessionData, user_id: int):
 
 # get all sessions
 def get_all_session(user_id: int):
+    """
+    Get all sessions:
+        This function gets all the sessions of a user
+
+    Parameters:
+    - user_id : int
+        user id of the user
+
+    Returns:
+    - sessions : List[AssessmentSession]
+        list of AssessmentSession objects
+
+    """
     return [item for item in session_progress_db if item['user_id'] == user_id]
 
 # Dummy assessment data
@@ -105,6 +134,22 @@ assessments_db = [{
 
 # get a session details
 def get_session_detail(user_id: int, assessment_id: int):
+    """
+    Get session details:
+        This function gets the session details of a user
+
+    Parameters:
+    - user_id : int
+        user id of the user
+    - assessment_id : int
+        assessment id of the assessment
+
+    Returns:
+    - assessment_dict : AssessmentSessionData
+        AssessmentSessionData object
+
+    """
+    
     # validate that such call is possible
     session_progress = next((item for item in session_progress_db if item['assessment_id'] == assessment_id and item['user_id'] == user_id), None)
     

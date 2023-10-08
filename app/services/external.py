@@ -21,6 +21,7 @@ def authenticate_user(token: str = Header(...)):
 
     Raises:
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
+    
     """
     request = get(f"{settings.AUTH_SERVICE_URL}/api/auth/verify", headers={"Authorization": token})
 
@@ -49,6 +50,7 @@ def check_for_assessment(user_id:str,assessment_id:str,db:Session):
             assessment id of the assessment
         - db : Session
             database session
+
 
         Returns:
         - check : UserAssessment
@@ -81,7 +83,6 @@ def fetch_questions(assessment_id:str,db:Session):
             returns True if there are questions under the assessment_id
         - questions : list
             returns the list of questions under the assessment_id
-
     """
     questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
     if not questions:
