@@ -15,6 +15,7 @@ router = APIRouter(tags=["Assessments"], prefix="/assessments")
 @router.get("/", response_model=UserAssessmentResponse)
 async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db)):
     """
+    
     Retrieve all assessments taken by a user.
 
     Method: GET
