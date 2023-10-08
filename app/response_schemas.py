@@ -15,8 +15,7 @@ class UserAssessmentResponse(BaseModel):
     status: STATUS
     submission_date: str
 
-class StartAssessmentResponse(BaseModel):
-    message: str
-    status_code: int
-    answers: list(AssessmentAnswers)
-
+class AssessmentResults(BaseModel):
+    score : float
+    status : str
+    answers : list[AssessmentAnswers]

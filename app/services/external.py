@@ -3,6 +3,7 @@ from sqlalchemy import and_
 from fastapi import HTTPException,status, Header
 from app.models import UserAssessment, Question, Answer
 from app.config import settings
+from app.schemas import AssessmentAnswers
 from requests import get
 
 def authenticate_user(token: str = Header(...)):
