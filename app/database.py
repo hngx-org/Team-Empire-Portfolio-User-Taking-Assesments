@@ -78,7 +78,6 @@ def get_db():
         db.close()
     return db
 
-
 def get_db_unyield():
     """
         Get db unyield:

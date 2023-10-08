@@ -14,3 +14,5 @@ class UserAssessmentResponse(BaseModel):
     score: float
     status: STATUS
     submission_date: str
+
+    

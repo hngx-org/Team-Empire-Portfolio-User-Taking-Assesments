@@ -12,7 +12,7 @@
   - [🚀 Deployment ](#-deployment-)
 
 ## 🧐 About <a name = "about"></a>
-
+<!-- some fix -->
 This is a microservice that is part of a larger project. It is responsible for handling the user taking assessments and grading them. It is written in Python and uses [FastAPI](fastapi.com) as the web framework. It uses a Postgres database to store the user's answers and the results of the assessment.
 
 ## 🏁 Getting Started <a name = "getting_started"></a>

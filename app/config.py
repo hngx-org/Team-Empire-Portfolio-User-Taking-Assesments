@@ -25,5 +25,4 @@ class Settings:
     LOCAL = config("LOCAL", cast=bool, default=False)
 
 
-
 settings = Settings()

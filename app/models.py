@@ -485,3 +485,7 @@ class UserBadge(DATEBaseModel):
     user = relationship("User", back_populates="user_badge")
     badge = relationship("SkillBadge", back_populates="user_badge")
     assessment = relationship("Assessment", back_populates="user_badge")
+
+
+
+# Path: app/router.py
