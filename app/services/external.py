@@ -1,12 +1,10 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from fastapi import HTTPException,status, Header
-from app.models import UserAssessment, Question, Answer
-from app.config import settings
-from app.schemas import AssessmentAnswers
+from app.models import UserAssessment, Question
+from app.config import settings, Permission
 from requests import get
+from app.response_schemas import AuthenticateUser
 
-err_message = ""
 
 def authenticate_user(token: str = Header(...)):
     """
@@ -23,10 +21,16 @@ def authenticate_user(token: str = Header(...)):
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
     
     """
-    request = get(f"{settings.AUTH_SERVICE_URL}/api/auth/verify", headers={"Authorization": token})
+    request = get(f"{settings.AUTH_SERVICE_URL}", headers={"Authorization": token})
 
     if request.status_code != 200:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    
+    if request.json()["permissions"]["assessment"] == []:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    
+    if Permission.check_permissions(request.json()["permissions"]["assessment"]) == False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     
     request = request.json()
 
@@ -36,7 +40,36 @@ def authenticate_user(token: str = Header(...)):
         "permissions": request["permissions"]["assessment"]
     }
 
-    return data
+    return AuthenticateUser(**data)
+
+
+# create a function that has a fixed token for testing
+def fake_authenticate_user(token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6"):
+    """
+    ***fake_authenticate_user(SUBJECT TO CHANGE)***
+    Takes the token from the header and makes a request to the authentication service to authenticate the user.
+
+    Parameters:
+    - token: This is the token of the user gotten from the header.
+
+    Returns:
+    - data: This is the data gotten from the authentication service.
+
+    Raises:
+    - HTTPException: This is raised if the authentication service returns a status code other than 200.
+    
+    """
+    if token != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    
+    data = {
+        "user_id": "2mn3m4n23mb34n23b4234234nbm234",
+        "is_super_admin": False,
+        "permissions": ['assessments::view', 'assessment::take','results::view',]
+    }
+
+    return AuthenticateUser(**data)
+    
 
 def check_for_assessment(user_id:str,assessment_id:str,db:Session):
     """
