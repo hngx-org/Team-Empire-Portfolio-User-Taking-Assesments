@@ -23,6 +23,7 @@ class Settings:
     DB_HOST = config("DB_HOSTNAME")
     DB_PORT = config("DB_PORT")
     LOCAL = config("LOCAL", cast=bool, default=False)
+    AUTH_SERVICE_URL = config("AUTH_SERVICE_URL")
 
 
 settings = Settings()
