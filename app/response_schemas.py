@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from app.schemas import STATUS
+from app.schemas import STATUS, AssessmentAnswers
 
 class StartAssessmentResponse(BaseModel):
     message: str
@@ -15,4 +15,7 @@ class UserAssessmentResponse(BaseModel):
     status: STATUS
     submission_date: str
 
-    
+class AssessmentResults(BaseModel):
+    score : float
+    status : str
+    answers : list[AssessmentAnswers]
