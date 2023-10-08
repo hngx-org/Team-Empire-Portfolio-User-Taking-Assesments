@@ -295,3 +295,25 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
     }
     return response
 
+
+@router.get("/user", response_model=List[UserAssessmentResponse])
+async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db)):
+    """
+    Retrieve all assessments taken by a user.
+
+    Args:
+        db (Session): SQLAlchemy database session.
+        user_id (str): ID of the user whose assessments need to be retrieved.
+
+    Returns:
+        List[UserAssessment]: List of UserAssessment objects representing the assessments taken by the user.
+    """
+    user_id = request.user_id
+    
+     # Assuming you have a function to fetch a list of user assessments by user_id.
+    user_assessments = get_user_assessments_from_db(user_id=user_id, db=db)
+    if not user_assessments:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
+
+    return user_assessments
