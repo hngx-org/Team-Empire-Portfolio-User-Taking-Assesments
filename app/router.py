@@ -7,6 +7,7 @@ from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
+from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
 
 
 # Create a router object
@@ -339,3 +340,18 @@ async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depe
             status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
 
     return user_assessments
+
+@router.post("/save_session/")
+def save_endpoint(data: SessionData, user_id: int):
+    # check if user is eligible to submit assessment at first if required
+    # user_id comes from auth
+    return save_session(data, user_id)
+
+@router.get("/get_all_session/{user_id}")
+def get_all_endpoint(user_id: int):
+    return get_all_session(user_id)
+
+@router.get("/get_session_detail/{user_id}/{assessment_id}")
+def get_detail_endpoint(user_id: int, assessment_id: int):
+    # check if user is eligible to get details first. user_id comes from auth
+    return get_session_detail(user_id, assessment_id)
