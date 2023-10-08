@@ -19,7 +19,6 @@ async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depe
 
     Method: GET
     Request: User ID
-
     Response:
 
         - message: Message indicating the status of the request
