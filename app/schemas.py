@@ -241,7 +241,7 @@ class Answer(AnswerBase):
 # Query fields
 class StartAssessment(BaseModel):
     user_id: str
-    assessment_id:str
+    assessment_id:int
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
