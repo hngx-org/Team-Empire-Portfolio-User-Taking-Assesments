@@ -6,7 +6,7 @@ from enum import Enum
 class AssessmentAnswers(BaseModel):
     question_text : str
     answer_text: str
-    
+
 class STATUS(Enum):
     pending = "pending"
     complete = "complete"
@@ -174,6 +174,7 @@ class UserResponse(UserResponseBase):
     class Config:
         orm_mode = True
 
+
 # UserAssessmentProgress schema
 
 
@@ -245,3 +246,18 @@ class StartAssessment(BaseModel):
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
+
+
+# ADDED BY NEON
+class SubmittedAnswer(BaseModel):
+    answer:str
+    question_id:int
+
+class SubmitAssessment(BaseModel):
+    user_answers:List[SubmittedAnswer]=[]
+    assessment_id:int
+
+
+class SubmitAssessmentResponse(BaseModel):
+    pass
+

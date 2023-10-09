@@ -1,3 +1,74 @@
+Assessments=[
+    {
+        "skill_id":10,
+        "title":"Backend Test",
+        "description":"lorem ipsum",
+        "duration_minutes":10,
+        "id":111,
+        "pass_score":70,
+        "status":"pending",
+        "start_date":"time",
+        "end_date":"time",
+    },
+        {
+        "skill_id":9,
+        "title":"Backend Test",
+        "description":"lorem ipsum",
+        "duration_minutes":10,
+        "id":24,
+        "pass_score":70,
+        "status":"pending",
+        "start_date":"time",
+        "end_date":"time",
+    }
+]
+
+Answers=[
+    {
+        "question_id":1,
+        "answer_text":"a",
+        "is_correct":False,
+        "id":2
+    },
+
+    {
+        "question_id":1,
+        "answer_text":"b",
+        "is_correct":False,
+        "id":3
+    },
+
+        {
+        "question_id":1,
+        "answer_text":"c",
+        "is_correct":True,
+        "id":5
+    }
+]
+
+Answers2=[
+    {
+        "question_id":2,
+        "answer_text":"a",
+        "is_correct":False,
+        "id":2
+    },
+
+    {
+        "question_id":2,
+        "answer_text":"b",
+        "is_correct":False,
+        "id":3
+    },
+
+        {
+        "question_id":2,
+        "answer_text":"c",
+        "is_correct":True,
+        "id":6
+    }
+]
+
 UserAssessments = [
     {
         "id": 1,
@@ -116,3 +187,83 @@ response_data = [
         }
     }
 ]
+
+Questions =[
+    {
+    "assessment_id":111,
+    "id":1,
+    "question_text":"This is a sample question and this is question 1",
+    "question_type":"obj",
+    "answers":Answers
+    },
+    {
+    "assessment_id":111,
+    "id":2,
+    "question_text":"This is a sample question and this is question 2",
+    "question_type":"obj",
+    "answers":Answers2
+    },
+    {
+    "assessment_id":111,
+    "id":3,
+    "question_text":"This is a sample question and this is question 3",
+    "question_type":"theory",
+    },
+    {
+    "assessment_id":111,
+    "id":4,
+    "question_text":"This is a sample question and this is question 4",
+    "question_type":"theory",
+    },
+    {
+    "assessment_id":456,
+    "id":1,
+    "question_text":"This is a sample question and this is question 1",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":456,
+    "id":2,
+    "question_text":"This is a sample question and this is question 2",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":456,
+    "id":3,
+    "question_text":"This is a sample question and this is question 3",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":789,
+    "id":1,
+    "question_text":"This is a sample question and this is question 5",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":789,
+    "id":2,
+    "question_text":"This is a sample question and this is question 1",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":789,
+    "id":3,
+    "question_text":"This is a sample question and this is question 2",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":789,
+    "id":4,
+    "question_text":"This is a sample question and this is question 3",
+    "question_type":"MCQ",
+    },
+    {
+    "assessment_id":789,
+    "id":5,
+    "question_text":"This is a sample question and this is question 4",
+    "question_type":"MCQ",
+    },
+
+
+]
+

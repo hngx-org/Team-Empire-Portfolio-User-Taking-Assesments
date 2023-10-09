@@ -261,7 +261,7 @@ class Question(BaseModel):
         "assessment.id", ondelete="CASCADE"), nullable=False)
     question_text = Column(Text, nullable=False)
     question_type = Column(String, nullable=False)
-
+    
     assessment = relationship("Assessment", back_populates="question")
     answer = relationship("Answer", back_populates="question")
     user_assessment_progress = relationship(

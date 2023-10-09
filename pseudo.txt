@@ -1,0 +1,37 @@
+what the user sends:
+
+       body: {
+            assessment_id:int,
+            answer_obj:[
+                {
+                    question_id:int,
+                    answer:str
+                },
+                                {
+                    question_id:int,
+                    answer:str
+                }
+            ]
+        }
+
+in the database now
+
+questions already created for an assessment...........
+
+possible answers are options, that are already in the database, with one of them being true....
+
+question{
+    questn text
+    correct_option
+}
+
+this is what i was thinking before
+is that, a,b,c,d
+
+Chunks to achieve:
+    -create request schema
+    -check the answers via loop
+    -get the total score
+
+Tables i'm updating:
+    
