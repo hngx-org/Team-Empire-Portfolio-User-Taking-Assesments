@@ -1,19 +1,25 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from app.services.user_session import AssessmentSessionData, SessionData, save_session, get_all_session, get_session_detail  # replace 'your_module_name' with the actual name of your module
+from app.services.external import authenticate_user, fake_authenticate_user
+from app.config import settings
+from app.response_schemas import AuthenticateUser
+
+if settings.ENVIRONMENT == "development":
+    authenticate_user = fake_authenticate_user
 
 test_app = FastAPI()
 
 @test_app.post("/save_session/", status_code=201)
-def save_endpoint(data: SessionData, user_id: int):
+def save_endpoint(data: SessionData, user_id: int, auth: AuthenticateUser = authenticate_user):
     return save_session(data, user_id)
 
 @test_app.get("/get_all_session/{user_id}")
-def get_all_endpoint(user_id: int):
+def get_all_endpoint(user_id: int, auth: AuthenticateUser = authenticate_user):
     return get_all_session(user_id)
 
 @test_app.get("/get_session_detail/{user_id}/{assessment_id}", response_model=AssessmentSessionData)
-def get_detail_endpoint(user_id: int, assessment_id: int):
+def get_detail_endpoint(user_id: int, assessment_id: int, auth: AuthenticateUser = authenticate_user):
     return get_session_detail(user_id, assessment_id)
 
 client = TestClient(test_app)
