@@ -2,7 +2,7 @@ from fastapi import APIRouter, Response, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-# from app.services.external import check_for_assessment,fetch_questions
+from app.services.external import check_for_assessment,fetch_questions
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
@@ -283,6 +283,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
     
     #extract question(id,text type) and append to questions list
+    #uncomment the block below after testing
+    '''
     question_list =[]
     for question in questions_instance:
         single_question = {
@@ -291,7 +293,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
             "question_type":question.question_type
         }
         question_list.append(single_question)
-         
+    '''
+    question_list = questions_instance
     response = {
         "message": "questions fetched successfully",
         "status_code": status.HTTP_200_OK,
