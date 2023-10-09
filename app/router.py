@@ -299,6 +299,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
     
     #extract question(id,text type) and append to questions list
+    #uncomment the block below after testing
+    '''
     question_list =[]
     for question in questions_instance:
         single_question = {
@@ -307,7 +309,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
             "question_type":question.question_type
         }
         question_list.append(single_question)
-         
+    '''
+    question_list = questions_instance #comment this line after testing and grading
     response = {
         "message": "questions fetched successfully",
         "status_code": status.HTTP_200_OK,
