@@ -1,10 +1,11 @@
+from pprint import pprint
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from fastapi import HTTPException,status
 from app.models import UserAssessment, Question, Answer
 from app.config import settings
 from app.schemas import AssessmentAnswers
-from app.fake_db_response import UserAssessments, Questions
+from app.fake_db_response import UserAssessments, Questions, Answers
 
 
 def get_assessment_results(user_id: str, assessment_id: int, db : Session):
@@ -50,17 +51,17 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     # db_questions = db.query(Question).join(Answer, Question.id == Answer.question_id)\
     #                 .filter(Question.assessment_id == assessment_id).all()
     
-    print(user_id, assessment_id)
+    
     assessment_obj = None
 
     for assessment in UserAssessments:
-        print(assessment.get('assessment_id'))
+     
         if assessment['assessment_id'] == assessment_id:
             assessment_obj = assessment
         else:
             continue
     
-    print(assessment_obj)
+
     if assessment_obj is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -71,5 +72,12 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     assessment_status = assessment_obj.get('status')   
 
     db_questions = [question for question in Questions if question['assessment_id'] == assessment_id]
+    for question in db_questions:
+        question['answer_text'] = ''
+        for answer in Answers:
+            if answer['question_id'] == question['id']:
+                question['answer_text'] = answer['answer_text']
+            else:
+                continue
 
     return score, assessment_status, db_questions

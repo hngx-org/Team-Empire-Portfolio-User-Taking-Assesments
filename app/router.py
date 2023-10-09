@@ -375,11 +375,11 @@ async def get_assessment_result(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
     
-    score, status, answers = get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
+    score, assessment_status, answers = get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
     
     response = {
         "score": score,
-        "status": status,
+        "status": assessment_status,
         "answers": answers
     }
     
