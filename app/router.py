@@ -320,8 +320,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
 
 @router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
 async def get_assessment_result(
-    assessment_id,
-    user_id,
+    assessment_id: int,
+    user_id: str,
     db: Session = Depends(get_db),
     user=Depends(authenticate_user)
 ):
@@ -374,11 +374,11 @@ async def get_assessment_result(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
     
-    score, status, answers = await get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
+    score, assessment_status, answers = get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
     
     response = {
         "score": score,
-        "status": status,
+        "status": assessment_status,
         "answers": answers
     }
     

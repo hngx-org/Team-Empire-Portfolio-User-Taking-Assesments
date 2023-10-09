@@ -198,3 +198,33 @@ Questions =[
 
     
 ]
+
+
+Answers =[
+    {
+    "question_id":1,
+    "answer_text":"This is a sample answer and this is answer 1",
+    },
+
+    {
+    "question_id":2,
+    "answer_text":"This is a sample answer and this is answer 2",
+    },
+
+    {
+    "question_id":3,
+    "answer_text":"This is a sample answer and this is answer 3",
+    },
+
+    {
+    "question_id":4,
+    "answer_text":"This is a sample answer and this is answer 4",
+    },
+
+    {
+    "question_id":5,
+    "answer_text":"This is a sample answer and this is answer 5",
+    },
+    
+        
+]
