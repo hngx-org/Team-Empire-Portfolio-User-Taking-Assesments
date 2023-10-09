@@ -78,4 +78,3 @@ class Permissions():
 
 settings = Settings()
 Permission = Permissions(permissions=['assessments::view', 'assessment::take', 'results::view', 'assessments::start'])
-
