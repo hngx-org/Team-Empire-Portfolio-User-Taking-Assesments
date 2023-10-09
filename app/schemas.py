@@ -5,7 +5,7 @@ from enum import Enum
 
 class AssessmentAnswers(BaseModel):
     question_text : str
-    answer_text: str
+    answer_text: str = None
     
 class STATUS(Enum):
     pending = "pending"
