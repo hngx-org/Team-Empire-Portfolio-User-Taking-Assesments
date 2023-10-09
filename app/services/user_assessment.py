@@ -22,5 +22,6 @@ def get_user_assessments_from_db(user_id: str,db=Session):
     # Replace when live data is available on DB
     # assessments = db.query(UserAssessment).filter(UserAssessment.user_id == user_id).all()
 
+    print(user_id)
     assessments = [assessment for assessment in fake_db_user_assessments if assessment['user_id'] == user_id]
     return assessments
