@@ -66,7 +66,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
     data = {
         "user_id": "2mn3m4n23mb34n23b4234234nbm234",
         "is_super_admin": False,
-        "permissions": ['assessments::view', 'assessment::take','results::view',]
+        "permissions": ['assessments::view', 'assessment::take','results::view', 'assessments::start']
     }
 
     return AuthenticateUser(**data)
