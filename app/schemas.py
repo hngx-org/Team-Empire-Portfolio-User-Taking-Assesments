@@ -42,7 +42,7 @@ class User(UserBase):
     user_badge: List["UserBadge"] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # UserAssessment schema
 class UserAssessmentBase(BaseModel):
@@ -64,7 +64,7 @@ class UserAssessment(UserAssessmentBase):
     assessment: Optional["Assessment"] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # User Badge
 class UserBadgeBase(BaseModel):
@@ -83,7 +83,7 @@ class UserBadge(UserBadgeBase):
     badge: Optional["SkillBadge"] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Skill badge schema
 
@@ -106,7 +106,7 @@ class SkillBadge(SkillBadgeBase):
     user_badge: List[UserBadge] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Assessment schema
 
@@ -131,7 +131,7 @@ class Assessment(AssessmentBase):
     skill: Optional["Skill"] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Skill schema
 
@@ -152,7 +152,7 @@ class Skill(SkillBase):
     assessment: List[Assessment] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # UserResponse schema
 
@@ -172,7 +172,7 @@ class UserResponse(UserResponseBase):
     user_assessment_progress: List["UserAssessmentProgress"] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # UserAssessmentProgress schema
 
@@ -191,7 +191,7 @@ class UserAssessmentProgress(UserAssessmentProgressBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Question schema
 
@@ -214,7 +214,7 @@ class Question(QuestionBase):
     user_response: List[UserResponse] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # Answer schema
 
@@ -235,7 +235,7 @@ class Answer(AnswerBase):
     user_response: List[UserResponse] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # Query fields

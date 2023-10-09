@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -8,14 +8,20 @@ from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
 from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
+from app.config import Permission, settings
+from app.services.external import fake_authenticate_user, authenticate_user
+from app.response_schemas import AuthenticateUser
 
+if settings.ENVIRONMENT == "development":
+    authenticate_user = fake_authenticate_user
 
 # Create a router object
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/", response_model=UserAssessmentResponse)
-async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db)):
+@router.get("/{user_id}", )
+async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+
     """
 
     Retrieve all assessments taken by a user.
@@ -141,7 +147,12 @@ async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depe
     status_code: 500
     }
     """
-    user_id = request.user_id
+    if not Permission.check_permission(user.permissions, "assessments::view"):
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
+    
+    
     assessments = get_user_assessments_from_db(user_id=user_id, db=db)
     
     return assessments
@@ -149,7 +160,7 @@ async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depe
 
 
 @router.post("/start-assessment",response_model=StartAssessmentResponse)
-async def start_assessment(request:StartAssessment,db:Session = Depends(get_db)):
+async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),user=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
 
@@ -266,6 +277,10 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
         }
 
     '''
+    if not Permission.check_permission(user.permissions, "assessments::start"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
+    
     user_id = request.user_id
     assessment_id = request.assessment_id
     _,err = check_for_assessment(user_id=user_id,assessment_id=assessment_id,db=db)
@@ -305,9 +320,13 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db))
 async def get_assessment_result(
     assessment_id,
     user_id,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user=Depends(authenticate_user)
 ):
-
+    if not Permission.check_permission(user.permissions, "results::view"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
+    
     score, status, answers = await get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
     
     response = {
@@ -319,39 +338,57 @@ async def get_assessment_result(
 
     return response
 
-@router.get("/user", response_model=List[UserAssessmentResponse])
-async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db)):
-    """
-    Retrieve all assessments taken by a user.
+# @router.get("/user", response_model=List[UserAssessmentResponse])
+# async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db), user=Depends(authenticate_user)):
+#     """
+#     Retrieve all assessments taken by a user.
 
-    Args:
-        db (Session): SQLAlchemy database session.
-        user_id (str): ID of the user whose assessments need to be retrieved.
+#     Args:
+#         db (Session): SQLAlchemy database session.
+#         user_id (str): ID of the user whose assessments need to be retrieved.
 
-    Returns:
-        List[UserAssessment]: List of UserAssessment objects representing the assessments taken by the user.
-    """
-    user_id = request.user_id
+#     Returns:
+#         List[UserAssessment]: List of UserAssessment objects representing the assessments taken by the user.
+#     """
+
+#     if not Permission.check_permission(user.permissions, "assessments::view"):
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
     
-     # Assuming you have a function to fetch a list of user assessments by user_id.
-    user_assessments = get_user_assessments_from_db(user_id=user_id, db=db)
-    if not user_assessments:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
+#     user_id = request.user_id
+    
+#      # Assuming you have a function to fetch a list of user assessments by user_id.
+#     user_assessments = get_user_assessments_from_db(user_id=user_id, db=db)
+#     if not user_assessments:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
 
-    return user_assessments
+#     return user_assessments
 
 @router.post("/save_session/")
-def save_endpoint(data: SessionData, user_id: int):
+def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_user)):
+
+    if not Permission.check_permission(user.permissions, "assessment::take"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to save session")
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
     return save_session(data, user_id)
 
 @router.get("/get_all_session/{user_id}")
-def get_all_endpoint(user_id: int):
+def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
+
+    if not Permission.check_permission(user.permissions, "assessment::take"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
     return get_all_session(user_id)
 
 @router.get("/get_session_detail/{user_id}/{assessment_id}")
-def get_detail_endpoint(user_id: int, assessment_id: int):
+def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authenticate_user)):
+
+    if not Permission.check_permission(user.permissions, "assessment::take"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get session detail")
+    
     # check if user is eligible to get details first. user_id comes from auth
     return get_session_detail(user_id, assessment_id)
