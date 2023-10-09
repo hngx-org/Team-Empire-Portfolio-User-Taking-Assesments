@@ -19,9 +19,8 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/{user_id}", )
+@router.get("/{user_id}", response_model=List[UserAssessmentResponse])
 async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
-
     """
 
     Retrieve all assessments taken by a user.
@@ -152,8 +151,8 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
     
-    
     assessments = get_user_assessments_from_db(user_id=user_id, db=db)
+   
     
     return assessments
   
