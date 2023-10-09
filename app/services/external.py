@@ -44,13 +44,13 @@ def authenticate_user(token: str = Header(...)):
 
 
 # create a function that has a fixed token for testing
-def fake_authenticate_user(token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6"):
+def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6"):
     """
-    ***fake_authenticate_user(SUBJECT TO CHANGE)***
-    Takes the token from the header and makes a request to the authentication service to authenticate the user.
+    ***fake_authenticate_user(SUBJECT TO CHANGE when authentication service provides us with information)***
+    Takes the fake_token from the header and makes a request to the authentication service to authenticate the user.
 
     Parameters:
-    - token: This is the token of the user gotten from the header.
+    - fake_token: This is the fake_token of the user gotten from the header.
 
     Returns:
     - data: This is the data gotten from the authentication service.
@@ -59,7 +59,7 @@ def fake_authenticate_user(token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
     
     """
-    if token != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6":
+    if fake_token != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
     data = {
