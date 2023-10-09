@@ -18,9 +18,9 @@ class Settings:
     """
     DB_TYPE = config("DB_TYPE")
     DB_NAME = config("DB_NAME")
-    DB_USER = config("DB_USERNAME")
+    DB_USER = config("DB_USER")
     DB_PASSWORD = config("DB_PASSWORD")
-    DB_HOST = config("DB_HOSTNAME")
+    DB_HOST = config("DB_HOST")
     DB_PORT = config("DB_PORT")
     LOCAL = config("LOCAL", cast=bool, default=False)
     AUTH_SERVICE_URL = config("AUTH_SERVICE_URL")
@@ -78,4 +78,3 @@ class Permissions():
 
 settings = Settings()
 Permission = Permissions(permissions=['assessments::view', 'assessment::take', 'results::view', 'assessments::start'])
-

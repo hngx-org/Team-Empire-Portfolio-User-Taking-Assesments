@@ -2,7 +2,8 @@
 from sqlalchemy import create_engine
 # from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, declarative_base
-from decouple import config
+from app.config import settings
+
 
 def get_db_engine():
     """
@@ -22,12 +23,12 @@ def get_db_engine():
         - DB_PORT: This is the port of the database.
 
             """
-    DB_TYPE = config("DB_TYPE")
-    DB_NAME = config("DB_NAME")
-    DB_USER = config("DB_USERNAME")
-    DB_PASSWORD = config("DB_PASSWORD")
-    DB_HOST = config("DB_HOSTNAME")
-    DB_PORT = config("DB_PORT")
+    DB_TYPE = settings.DB_TYPE
+    DB_NAME = settings.DB_NAME
+    DB_USER = settings.DB_USER
+    DB_PASSWORD = settings.DB_PASSWORD
+    DB_HOST = settings.DB_HOST
+    DB_PORT = settings.DB_PORT
 
     DATABASE_URL = "sqlite:///./database.db"
 
