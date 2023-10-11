@@ -22,23 +22,20 @@ def authenticate_user(token: str = Header(...)):
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
     
     """
-    request = get(f"{settings.AUTH_SERVICE_URL}", headers={"Authorization": token})
+    request = get(f"{settings.AUTH_SERVICE_URL}", headers={"Authorization": token}).json()
 
-    if request.status_code != 200:
+
+
+    if request.get("status") == 401:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
-    if request.json()["permissions"]["assessment"] == []:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    if request.get("status") != 200:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
     
-    if Permission.check_permissions(request.json()["permissions"]["assessment"]) == False:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
-    
-    request = request.json()
-
+    # Permission.check_permissions(request.get('data').get('permissions'))
     data = {
-        "user_id": request["user_id"],
-        "is_super_admin": request["is_super_admin"],
-        "permissions": request["permissions"]["assessment"]
+        "id": request.get("data").get("user_id"),
+        "permissions": request.get("data").get("permissions"),
     }
 
     return AuthenticateUser(**data)
@@ -64,9 +61,8 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
     data = {
-        "user_id": "2mn3m4n23mb34n23b4234234nbm234",
-        "is_super_admin": False,
-        "permissions": ['assessments::view', 'assessment::take','results::view', 'assessments::start']
+        "id": "2mn3m4n23mb34n23b4234234nbm234",
+        "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
     return AuthenticateUser(**data)

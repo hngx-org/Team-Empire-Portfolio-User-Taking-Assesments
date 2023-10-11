@@ -159,7 +159,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
 
 
 @router.post("/start-assessment",response_model=StartAssessmentResponse)
-async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),user=Depends(authenticate_user)):
+async def start_assessment(request:StartAssessment,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
 
@@ -296,13 +296,12 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         }
 
     '''
-    if not Permission.check_permission(user.permissions, "assessments::start"):
+    if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
-    user_id = user.user_id
     assessment_id = request.assessment_id
-    _,err = check_for_assessment(user_id=user_id,assessment_id=assessment_id,db=db)
+    _,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
     if err:
@@ -340,8 +339,8 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
 async def get_assessment_result(
     assessment_id: int,
     user_id: str,
-    db: Session = Depends(get_db),
-    user=Depends(authenticate_user)
+    db: Session = Depends(get_db), 
+    user:AuthenticateUser=Depends(authenticate_user)
 ):
     """
     Retrieve assessment results for a user.
@@ -388,7 +387,7 @@ async def get_assessment_result(
 
 
     """
-    if not Permission.check_permission(user.permissions, "results::view"):
+    if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
     
@@ -403,35 +402,9 @@ async def get_assessment_result(
 
     return response
 
-# @router.get("/user", response_model=List[UserAssessmentResponse])
-# async def get_all_user_assessments(request:UserAssessmentQuery,db:Session = Depends(get_db), user=Depends(authenticate_user)):
-#     """
-#     Retrieve all assessments taken by a user.
-
-#     Args:
-#         db (Session): SQLAlchemy database session.
-#         user_id (str): ID of the user whose assessments need to be retrieved.
-
-#     Returns:
-#         List[UserAssessment]: List of UserAssessment objects representing the assessments taken by the user.
-#     """
-
-#     if not Permission.check_permission(user.permissions, "assessments::view"):
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
-    
-#     user_id = request.user_id
-    
-#      # Assuming you have a function to fetch a list of user assessments by user_id.
-#     user_assessments = get_user_assessments_from_db(user_id=user_id, db=db)
-#     if not user_assessments:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
-
-#     return user_assessments
 
 @router.post("/save_session/")
-def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_user)):
+def save_endpoint(data: SessionData, user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
     """
     Saves the session data for a user.
 
@@ -467,7 +440,7 @@ def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_use
                 }
     """
 
-    if not Permission.check_permission(user.permissions, "assessment::take"):
+    if not Permission.check_permission(user.permissions, "assessment.update.own" ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to save session")
     # check if user is eligible to submit assessment at first if required
@@ -475,7 +448,7 @@ def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_use
     return save_session(data, user_id)
 
 @router.get("/get_all_session/{user_id}")
-def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
+def get_all_endpoint(user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
 
     """
     Retrieves all sessions for a user.
@@ -561,13 +534,13 @@ def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
                     }    
     """
 
-    if not Permission.check_permission(user.permissions, "assessment::take"):
+    if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
     return get_all_session(user_id)
 
 @router.get("/get_session_detail/{user_id}/{assessment_id}")
-def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authenticate_user)):
+def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=Depends(authenticate_user)):
     """
     Retrieves session details for a user.
 
@@ -658,7 +631,7 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authentic
                     }
     """
 
-    if not Permission.check_permission(user.permissions, "assessment::take"):
+    if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get session detail")
     
