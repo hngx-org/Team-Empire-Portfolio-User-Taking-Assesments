@@ -3,11 +3,12 @@ from app.database import Base
 import uuid
 from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text
 from sqlalchemy.dialects.postgresql import UUID, ENUM
-
+from sqlalchemy.types import ARRAY
 
 # Define ENUMs
 STATUS = ENUM('pending', 'complete', 'failed', name='status_enum')
 BADGES = ENUM('beginner', 'intermediate', 'expert', name='badges_enum')
+
 
 class DATEBaseModel(Base):
     """
@@ -79,15 +80,16 @@ class User(UUIDBaseModel):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    token = Column(String, nullable=True)
     password = Column(String, nullable=False)
     section_order = Column(Text, nullable=True)  # Explain section_order
     provider = Column(String, nullable=True)  # Explain provider
     profile_pic = Column(Text, nullable=True)
     refresh_token = Column(String, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+    createdAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, server_default=text("now()"))
+    updatedAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, onupdate=text("now()"))
 
     user_assessment = relationship("UserAssessment", back_populates="user")
     user_badge = relationship("UserBadge", back_populates="user")
@@ -124,15 +126,14 @@ class UserAssessment(BaseModel):
         "user.id", ondelete="CASCADE"), nullable=False)
     assessment_id = Column(Integer, ForeignKey(
         "assessment.id", ondelete="CASCADE"), nullable=False)
-    score = Column(Float, nullable=False)
+    score = Column(Float)
     status = Column(STATUS, nullable=False, default="pending")
+    time_spent = Column(Integer)
     submission_date = Column(TIMESTAMP(timezone=True),
                              nullable=False, server_default=text("now()"))
 
     user = relationship("User", back_populates="user_assessment")
     assessment = relationship("Assessment", back_populates="user_assessment")
-    user_assessment_progress = relationship(
-        "UserAssessmentProgress", back_populates="user_assessment")
     user_response = relationship(
         "UserResponse", back_populates="user_assessment")
 
@@ -223,8 +224,9 @@ class Skill(BaseModel):
     assessment = relationship("Assessment", back_populates="skill")
     parent_skill = relationship(
         "Skill", remote_side=[id], back_populates="child_skill")
-    child_skill = relationship("Skill", remote_side=[
-                               parent_skill_id], back_populates="parent_skill")
+    child_skill = relationship(
+        "Skill", remote_side=[parent_skill_id], back_populates="parent_skill"
+    )
     skill_badge = relationship("SkillBadge", back_populates="skill")
     assessment_category = relationship(
         "AssessmentCategory", back_populates="skill")
@@ -259,13 +261,12 @@ class Question(BaseModel):
 
     assessment_id = Column(Integer, ForeignKey(
         "assessment.id", ondelete="CASCADE"), nullable=False)
+    question_no = Column(Integer, nullable=False)
     question_text = Column(Text, nullable=False)
     question_type = Column(String, nullable=False)
 
     assessment = relationship("Assessment", back_populates="question")
     answer = relationship("Answer", back_populates="question")
-    user_assessment_progress = relationship(
-        "UserAssessmentProgress", back_populates="question")
     user_response = relationship("UserResponse", back_populates="question")
 
 
@@ -295,48 +296,11 @@ class Answer(BaseModel):
 
     question_id = Column(Integer, ForeignKey(
         "question.id", ondelete="CASCADE"), nullable=False)
-    answer_text = Column(Text, nullable=False)
-    is_correct = Column(Boolean, nullable=False)
+    options = Column(ARRAY(String))
+    correct_option = Column(String)
 
     question = relationship("Question", back_populates="answer")
     user_response = relationship("UserResponse", back_populates="answer")
-
-
-class UserAssessmentProgress(BaseModel):
-    """
-    UserAssessmentProgress Table
-
-    It is a model for user_assessment_progress table in database.
-
-    Columns:
-
-    - user_assessment_id: foreign key to user_assessment table.
-    - question_id: foreign key to question table.
-    - status: status of the question.
-
-    Inherited columns:
-    - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
-
-    Relationships:
-
-    - UserAssessment: one-to-many
-    - Question: one-to-many
-
-    """
-    __tablename__ = "user_assessment_progress"
-
-    user_assessment_id = Column(Integer, ForeignKey(
-        "user_assessment.id", ondelete="CASCADE"), nullable=False)
-    question_id = Column(Integer, ForeignKey(
-        "question.id", ondelete="CASCADE"), nullable=False)
-    status = Column(STATUS, nullable=False, default="pending")
-
-    user_assessment = relationship(
-        "UserAssessment", back_populates="user_assessment_progress")
-    question = relationship(
-        "Question", back_populates="user_assessment_progress")
 
 
 class SkillBadge(DATEBaseModel):
@@ -372,6 +336,12 @@ class SkillBadge(DATEBaseModel):
     badge_image = Column(Text, nullable=False)
     min_score = Column(Float, nullable=False)
     max_score = Column(Float, nullable=False)
+    createdAt = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
+    )
+    updatedAt = Column(
+        TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()")
+    )
 
     skill = relationship("Skill", back_populates="skill_badge")
     user_badge = relationship("UserBadge", back_populates="badge")
@@ -409,6 +379,7 @@ class UserResponse(BaseModel):
         "question.id", ondelete="CASCADE"), nullable=False)
     answer_id = Column(Integer, ForeignKey(
         "answer.id", ondelete="CASCADE"), nullable=False)
+    selected_response = Column(Text)
 
     user_assessment = relationship(
         "UserAssessment", back_populates="user_response")
@@ -481,11 +452,13 @@ class UserBadge(DATEBaseModel):
         "skill_badge.id", ondelete="CASCADE"), nullable=False)
     assessment_id = Column(Integer, ForeignKey(
         "assessment.id", ondelete="CASCADE"), nullable=False)
+    createdAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, server_default=text("now()"))
+    updatedAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, onupdate=text("now()"))
 
     user = relationship("User", back_populates="user_badge")
     badge = relationship("SkillBadge", back_populates="user_badge")
     assessment = relationship("Assessment", back_populates="user_badge")
-
-
 
 # Path: app/router.py
