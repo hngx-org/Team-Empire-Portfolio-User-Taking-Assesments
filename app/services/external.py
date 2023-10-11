@@ -32,10 +32,10 @@ def authenticate_user(token: str = Header(...)):
     if request.get("status") != 200:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
     
-    # Permission.check_permissions(request.get('data').get('permissions'))
+    # Permission.check_permissions(request.get('user').get('permissions'))
     data = {
-        "id": request.get("data").get("user_id"),
-        "permissions": request.get("data").get("permissions"),
+        "id": request.get("user").get("user_id"),
+        "permissions": request.get("user").get("permissions"),
     }
 
     return AuthenticateUser(**data)

@@ -11,6 +11,8 @@ from app.services.user_session import SessionData, get_all_session, get_session_
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
+from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -619,3 +621,48 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=
     
     # check if user is eligible to get details first. user_id comes from auth
     return get_session_detail(user_id, assessment_id)
+    return user_assessments
+
+@router.post("/submit", )
+async def submit_assessment(
+    response:UserAssessmentanswer, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)
+):
+    """
+    Submit an assessment for a user.
+
+    Method: POST
+    Request_body: User ID, Assessment ID, Answers
+
+    Response:
+    
+            - message: Message indicating the status of the request
+            - status_code: Status code of the request
+
+    Error Response:
+
+            - message: Message indicating the status of the request
+            - status_code: Status code of the request
+
+    Example request:
+
+            curl -X POST "http://localhost:8000/api/assessments/1/submit" -H  "accept: application/json" -H  \
+            "Content-Type: application/json" -d "{\"user_id\":\"1\",\"assessment_id\":1,\"answers\":[{\"question_id\":1,\"user_answer_id\":1},\
+                {\"question_id\":2,\"user_answer_id\":2},{\"question_id\":3,\"user_answer_id\":3},{\"question_id\":4,\"user_answer_id\":4},\
+                    {\"question_id\":5,\"user_answer_id\":5},{\"question_id\":6,\"user_answer_id\":6},{\"question_id\":7,\"user_answer_id\":7},\
+                        {\"question_id\":8,\"user_answer_id\":8},{\"question_id\":9,\"user_answer_id\":9},{\"question_id\":10,\"user_answer_id\":10}]}"
+
+    Example response:
+    
+                {
+                "message": "Assessment submitted successfully",
+                "status_code": 200
+                }
+
+    """
+    if not Permission.check_permission(user.permissions, "assessment.update.own"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to submit assessments")
+    
+    # check if user is eligible to submit assessment at first if required
+    # user_id comes from auth
+    return save_session(response, user.id,db=db)
