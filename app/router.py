@@ -189,53 +189,73 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
             "questions": [
                 {
                     "id": 1,
+                    "question_number":1,
                     "question_text": "What is Python?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option 1","B. another answer","C. third option"]
                 },
                 {
                     "id": 2,
+                    "question_number":2,
                     "question_text": "What is Python used for?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 3,
+                    "question_number":3,
                     "question_text": "What is the difference between a list and a tuple?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option 1","B. another answer","C. third option"]
                 },
                 {
                     "id": 4,
+                    "question_number":4,
                     "question_text": "What is the difference between a list and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. first option ","B.another answer","C. third option"]
                 },
                 {
                     "id": 5,
+                    "question_number":5,
                     "question_text": "What is the difference between a list and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 6,
+                    "question_number":6,
                     "question_text": "What is the difference between a set and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 7,
+                    "question_number":7,
                     "question_text": "What is the difference between a tuple and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 8,
+                    "question_number":8,
                     "question_text": "What is the difference between a tuple and a set?",
                     "question_type": "MCQ"
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 9,
+                    "question_number":9,
                     "question_text": "What is the difference between a dictionary and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 10,
+                    "question_number":10,
                     "question_text": "What is the difference between a list, a tuple, a dictionary and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 }
             ]
         }
@@ -280,7 +300,7 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
-    user_id = request.user_id
+    user_id = user.user_id
     assessment_id = request.assessment_id
     _,err = check_for_assessment(user_id=user_id,assessment_id=assessment_id,db=db)
     
@@ -298,18 +318,16 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
     
     #extract question(id,text type) and append to questions list
-    #uncomment the block below after testing
-    '''
     question_list =[]
     for question in questions_instance:
         single_question = {
             "id": question.id,
+            "question_number":question.question_no,
             "question_text":question.question_text,
-            "question_type":question.question_type
+            "question_type":question.question_type,
+            "options": question.answer["options"],
         }
         question_list.append(single_question)
-    '''
-    question_list = questions_instance #comment this line after testing and grading
     response = {
         "message": "questions fetched successfully",
         "status_code": status.HTTP_200_OK,
