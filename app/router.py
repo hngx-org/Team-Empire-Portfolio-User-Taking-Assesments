@@ -1,12 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends,Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment,fetch_questions
+from app.services.external import check_for_assessment,fetch_questions,fetch_single_assessment
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults,SingleAssessmentResponse
 from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
@@ -159,7 +159,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
 
 
 @router.post("/start-assessment",response_model=StartAssessmentResponse)
-async def start_assessment(request:StartAssessment,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def start_assessment(request:StartAssessment,response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
 
@@ -301,12 +301,19 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
     assessment_id = request.assessment_id
-    _,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
+    user_assessment_instance,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
     if err:
         raise err
+    if not user_assessment_instance:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     
+    #retrieve assessment duration for setting cookies
+    duration = user_assessment_instance.assessment["duration_minutes"]
+    duration_seconds = duration*60
+    response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
+
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
@@ -637,3 +644,31 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=
     
     # check if user is eligible to get details first. user_id comes from auth
     return get_session_detail(user_id, assessment_id)
+
+@router.get("/get_single_assessment",response_model=SingleAssessmentResponse)
+def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+    
+    #edit below to match the right permission 
+    if not Permission.check_permission(user.permissions, "assessment.update.own"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
+
+    single_assessment_instance,error = fetch_single_assessment(user_id=user.id,db=db)
+    
+    #check for corresponding errors
+    if error:
+        raise error
+    if not single_assessment_instance:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
+    response = {
+        "assessment_id":single_assessment_instance.assessment_id,
+        "skill_id": single_assessment_instance.assessment["skill_id"],
+        "title": single_assessment_instance.assessment["title"],
+        "description" : single_assessment_instance.assessment["description"],
+        "duration_minutes" : single_assessment_instance.assessment["duration_minutes"] ,
+        "pass_score":single_assessment_instance.assessment["pass_score"],
+        "status": single_assessment_instance.assessment["status"],
+        "start_date": single_assessment_instance.assessment["start_date"] ,
+        "end_date": single_assessment_instance.assessment["end_date"] ,
+    }
+    return response

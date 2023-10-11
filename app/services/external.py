@@ -125,3 +125,30 @@ def fetch_questions(assessment_id:str,db:Session):
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     return questions,None
     
+def fetch_single_assessment(user_id:str,db:Session):
+    """
+        Get  single assessment :
+            This function gets a single assessment details if the user_id is present in the userAssessment database
+
+        Parameters:
+        - user_id : str
+            user id of the user
+        - db : Session
+            database session
+
+
+        Returns:
+        - check : UserAssessment
+            returns the UserAssessment object if there is a match
+        - None : None
+            returns None if there is no match
+
+    """
+    #query for assessment that the user has not taken
+    assessment_details = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.status=="pending").first()
+
+    if not assessment_details :
+        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found")
+    
+    return assessment_details,None
+

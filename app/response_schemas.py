@@ -22,6 +22,17 @@ class UserAssessmentResponse(BaseModel):
     status: STATUS
     submission_date: str
 
+class SingleAssessmentResponse(BaseModel):
+    assessment_id: int
+    skill_id: int
+    title: str
+    description : str
+    duration_minutes : int
+    pass_score: float
+    status: STATUS
+    start_date : str
+    end_date: str
+
 class AssessmentResults(BaseModel):
     score : float
     status : STATUS
