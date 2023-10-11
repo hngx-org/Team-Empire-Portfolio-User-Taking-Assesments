@@ -25,4 +25,6 @@ class UserAssessmentResponse(BaseModel):
 class AssessmentResults(BaseModel):
     score : float
     status : STATUS
+    user_id : str
+    assessment_id: int
     answers : list[AssessmentAnswers]
