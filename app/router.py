@@ -386,7 +386,7 @@ async def get_assessment_result(
 
 
 @router.post("/save_session/")
-def save_endpoint(data: SessionData, user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
+def save_endpoint(data: SessionData, db: Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     """
     Saves the session data for a user.
 
@@ -427,102 +427,102 @@ def save_endpoint(data: SessionData, user_id: int, user:AuthenticateUser=Depends
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to save session")
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-    return save_session(data, user_id)
+    return save_session(data, user_id = user.id, db=db)
 
-@router.get("/get_all_session/{user_id}")
-def get_all_endpoint(user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
+# @router.get("/get_all_session/{user_id}")
+# def get_all_endpoint(user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
 
-    """
-    Retrieves all sessions for a user.
+#     """
+#     Retrieves all sessions for a user.
 
-    Method: GET
-    Request: User ID
+#     Method: GET
+#     Request: User ID
 
-    Response:
+#     Response:
         
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
-            - sessions: List of sessions for the user
+#             - message: Message indicating the status of the request
+#             - status_code: Status code of the request
+#             - sessions: List of sessions for the user
 
-    Error Response:
+#     Error Response:
 
-                - message: Message indicating the status of the request
-                - status_code: Status code of the request
+#                 - message: Message indicating the status of the request
+#                 - status_code: Status code of the request
 
-    Example request:
+#     Example request:
 
-            curl -X GET "http://localhost:8000/api/assessments/get_all_session/1" -H  "accept: application/json"
+#             curl -X GET "http://localhost:8000/api/assessments/get_all_session/1" -H  "accept: application/json"
 
-    Example response:
+#     Example response:
 
-            {
-            "message": "Sessions fetched successfully",
-            "status_code": 200,
-            "sessions": [
-                {
-                    "id": 1,
-                    "user_id": 1,
-                    "assessment_id": 1,
-                    "answers": [
-                        {
-                            "question_id": 1,
-                            "answer": "Python is a programming language"
-                        },
-                        {
-                            "question_id": 2,
-                            "answer": "Python is used for web development"
-                        },
-                        {
-                            "question_id": 3,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 4,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 5,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 6,
-                            "answer": "Set is mutable"
-                        },
-                        {
-                            "question_id": 7,
-                            "answer": "Tuple is immutable"
-                        },
-                        {
-                            "question_id": 8,
-                            "answer": "Tuple is immutable"
-                        },
-                        {
-                            "question_id": 9,
-                            "answer": "Dictionary is mutable"
-                        },
-                        {
-                            "question_id": 10,
-                            "answer": "List is mutable, Tuple is immutable, Dictionary is mutable, Set is mutable"
-                        }
-                    ]
-                }
-            ]
+#             {
+#             "message": "Sessions fetched successfully",
+#             "status_code": 200,
+#             "sessions": [
+#                 {
+#                     "id": 1,
+#                     "user_id": 1,
+#                     "assessment_id": 1,
+#                     "answers": [
+#                         {
+#                             "question_id": 1,
+#                             "answer": "Python is a programming language"
+#                         },
+#                         {
+#                             "question_id": 2,
+#                             "answer": "Python is used for web development"
+#                         },
+#                         {
+#                             "question_id": 3,
+#                             "answer": "List is mutable"
+#                         },
+#                         {
+#                             "question_id": 4,
+#                             "answer": "List is mutable"
+#                         },
+#                         {
+#                             "question_id": 5,
+#                             "answer": "List is mutable"
+#                         },
+#                         {
+#                             "question_id": 6,
+#                             "answer": "Set is mutable"
+#                         },
+#                         {
+#                             "question_id": 7,
+#                             "answer": "Tuple is immutable"
+#                         },
+#                         {
+#                             "question_id": 8,
+#                             "answer": "Tuple is immutable"
+#                         },
+#                         {
+#                             "question_id": 9,
+#                             "answer": "Dictionary is mutable"
+#                         },
+#                         {
+#                             "question_id": 10,
+#                             "answer": "List is mutable, Tuple is immutable, Dictionary is mutable, Set is mutable"
+#                         }
+#                     ]
+#                 }
+#             ]
 
-    Error response:
+#     Error response:
         
-                    {
-                    "message": "User does not exist",
-                    "status_code": 404
-                    }    
-    """
+#                     {
+#                     "message": "User does not exist",
+#                     "status_code": 404
+#                     }    
+#     """
 
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
-    return get_all_session(user_id)
+#     if not Permission.check_permission(user.permissions, "assessment.read"):
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
+#     return get_all_session(user_id)
 
-@router.get("/get_session_detail/{user_id}/{assessment_id}")
-def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=Depends(authenticate_user)):
+@router.get("/get_session_detail/{session_id}")
+def get_detail_endpoint(session_id: int, db: Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     """
     Retrieves session details for a user.
 
@@ -618,4 +618,4 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get session detail")
     
     # check if user is eligible to get details first. user_id comes from auth
-    return get_session_detail(user_id, assessment_id)
+    return get_session_detail(session_id=session_id,db=db)
