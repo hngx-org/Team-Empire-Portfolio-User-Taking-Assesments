@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment,fetch_questions
+from app.services.external import check_for_assessment, fetch_questions
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
@@ -11,6 +11,8 @@ from app.services.user_session import SessionData, get_all_session, get_session_
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
+from app.utils import is_valid_uuid
+from app.services.user_assessment import get_user_by_id
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -19,8 +21,8 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/{user_id}", response_model=List[UserAssessmentResponse])
-async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+@router.get("/{user_id}", response_model=UserAssessmentResponse)
+async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
     Retrieve all assessments taken by a user.
@@ -39,7 +41,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
         - status_code: Status code of the request
 
     Example request:
-    
+
             curl -X GET "http://localhost:8000/api/assessments/?user_id=1" -H  "accept: application/json"
 
     Example response:
@@ -58,7 +60,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
                     "submission_date": "2021-09-08T15:43:00.000Z",
                     "assessment": {
                         "id": 1,
-                        "name": "Python Assessment",
+                        "title": "Python Assessment",
                         "description": "This is a python assessment",
                         "questions": [
                             {
@@ -118,8 +120,8 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
         }
 
     Error response:
-    
-    
+
+
                 {
                 "message": "No assessments found for this user",
                 "status_code": 404
@@ -146,20 +148,44 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
     status_code: 500
     }
     """
+    # Check if user_id is a valid UUID
+    if not is_valid_uuid(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user_id format. It should be a valid UUID."
+        )
+    
+    # check if the user id exists in the database:
+    db_user = get_user_by_id(user_id=user_id, db=db)
+    if not db_user:
+        error_detail = {"error": "User not found", "user_id": user_id}
+        raise HTTPException(status_code=404, detail=error_detail)
+
     if not Permission.check_permission(user.permissions, "assessments::view"):
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
-    
+
     assessments = get_user_assessments_from_db(user_id=user_id, db=db)
-   
-    
-    return assessments
-  
+    response_data = {}
+    if assessments:
+        response_data = {
+            "message": "Assessments fetched successfully",
+            "status_code": 200,
+            "assessments": assessments
+        }
+    else:
+        response_data = {
+            "message": "User has no assessments",
+            "status_code": 404,
+            "assessments": []
+        }
+
+    return response_data
 
 
-@router.post("/start-assessment",response_model=StartAssessmentResponse)
-async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),user=Depends(authenticate_user)):
+@router.post("/start-assessment", response_model=StartAssessmentResponse)
+async def start_assessment(request: StartAssessment, db: Session = Depends(get_db), user=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
 
@@ -167,7 +193,7 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
     Request_body: User ID, Assessment ID
 
     Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
             - questions: List of questions for the assessment
@@ -241,35 +267,35 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         }
 
     Error response:
-    
+
                     {
                     "message": "Assessment already started",
                     "status_code": 400
                     }
 
     Error response:
-    
+
                         {
                         "message": "Assessment does not exist",
                         "status_code": 404
                         }
 
     Error response:
-        
+
                             {
                             "message": "User does not exist",
                             "status_code": 404
                             }
 
     Error response:
-            
+
                                     {
                                     "message": "User ID is required",
                                     "status_code": 400
                                     }
 
     Error response:
-        
+
         {
         message: "failed to start assessment",
         status_code: 500
@@ -279,26 +305,29 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
     if not Permission.check_permission(user.permissions, "assessments::start"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
-    
+
     user_id = request.user_id
     assessment_id = request.assessment_id
-    _,err = check_for_assessment(user_id=user_id,assessment_id=assessment_id,db=db)
-    
-    #check for corresponding matching id
+    _, err = check_for_assessment(
+        user_id=user_id, assessment_id=assessment_id, db=db)
+
+    # check for corresponding matching id
     if err:
         raise err
-    
-    #get all questions for the assessment
-    questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
-    #check for availability of questions under the assessment_id
+    # get all questions for the assessment
+    questions_instance, error = fetch_questions(
+        assessment_id=assessment_id, db=db)
+
+    # check for availability of questions under the assessment_id
     if error:
         raise error
     if not questions_instance:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
-    
-    #extract question(id,text type) and append to questions list
-    #uncomment the block below after testing
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Critical error occured while fetching questions")
+
+    # extract question(id,text type) and append to questions list
+    # uncomment the block below after testing
     '''
     question_list =[]
     for question in questions_instance:
@@ -309,7 +338,7 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         }
         question_list.append(single_question)
     '''
-    question_list = questions_instance #comment this line after testing and grading
+    question_list = questions_instance  # comment this line after testing and grading
     response = {
         "message": "questions fetched successfully",
         "status_code": status.HTTP_200_OK,
@@ -338,7 +367,7 @@ async def get_assessment_result(
         - answers: List of answers submitted by the user
 
     Error Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request   
 
@@ -362,7 +391,7 @@ async def get_assessment_result(
                 }
 
     Error response:
-    
+
                     {
                     "message": "User does not exist",
                     "status_code": 404  
@@ -373,15 +402,15 @@ async def get_assessment_result(
     if not Permission.check_permission(user.permissions, "results::view"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
-    
-    score, assessment_status, answers = get_assessment_results(user_id=user_id, assessment_id=assessment_id, db=db)
-    
+
+    score, assessment_status, answers = get_assessment_results(
+        user_id=user_id, assessment_id=assessment_id, db=db)
+
     response = {
         "score": score,
         "status": assessment_status,
         "answers": answers
     }
-    
 
     return response
 
@@ -401,9 +430,9 @@ async def get_assessment_result(
 #     if not Permission.check_permission(user.permissions, "assessments::view"):
 #         raise HTTPException(
 #             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
-    
+
 #     user_id = request.user_id
-    
+
 #      # Assuming you have a function to fetch a list of user assessments by user_id.
 #     user_assessments = get_user_assessments_from_db(user_id=user_id, db=db)
 #     if not user_assessments:
@@ -411,6 +440,7 @@ async def get_assessment_result(
 #             status_code=status.HTTP_404_NOT_FOUND, detail="User has no assessments")
 
 #     return user_assessments
+
 
 @router.post("/save_session/")
 def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_user)):
@@ -421,12 +451,12 @@ def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_use
     Request_body: Session data
 
     Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
 
     Error Response:
-    
+
                 - message: Message indicating the status of the request
                 - status_code: Status code of the request
 
@@ -456,9 +486,9 @@ def save_endpoint(data: SessionData, user_id: int, user=Depends(authenticate_use
     # user_id comes from auth
     return save_session(data, user_id)
 
+
 @router.get("/get_all_session/{user_id}")
 def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
-
     """
     Retrieves all sessions for a user.
 
@@ -466,7 +496,7 @@ def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
     Request: User ID
 
     Response:
-        
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
             - sessions: List of sessions for the user
@@ -536,7 +566,7 @@ def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
             ]
 
     Error response:
-        
+
                     {
                     "message": "User does not exist",
                     "status_code": 404
@@ -548,6 +578,7 @@ def get_all_endpoint(user_id: int, user=Depends(authenticate_user)):
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
     return get_all_session(user_id)
 
+
 @router.get("/get_session_detail/{user_id}/{assessment_id}")
 def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authenticate_user)):
     """
@@ -557,7 +588,7 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authentic
     Request: User ID, Assessment ID
 
     Response:
-            
+
                 - message: Message indicating the status of the request
                 - status_code: Status code of the request
                 - session: Session details for the user
@@ -643,6 +674,6 @@ def get_detail_endpoint(user_id: int, assessment_id: int, user=Depends(authentic
     if not Permission.check_permission(user.permissions, "assessment::take"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get session detail")
-    
+
     # check if user is eligible to get details first. user_id comes from auth
     return get_session_detail(user_id, assessment_id)

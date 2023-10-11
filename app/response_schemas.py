@@ -9,20 +9,42 @@ class AuthenticateUser(BaseModel):
     permissions: list
 
 
-class StartAssessmentResponse(BaseModel):
-    message: str
-    status_code: int
-    questions: list
+class Question(BaseModel):
+    id: int
+    question_text: str
+    question_type: str
 
-class UserAssessmentResponse(BaseModel):
+
+class Assessment(BaseModel):
+    id: int
+    title: str
+    description: str
+    questions: List[Question]
+
+
+class UserAssessment(BaseModel):
     id: int
     user_id: str
     assessment_id: int
     score: float
     status: STATUS
     submission_date: str
+    assessment: Assessment
+
+
+class UserAssessmentResponse(BaseModel):
+    message: str
+    status_code: int
+    assessments: List[UserAssessment]
+
+
+class StartAssessmentResponse(BaseModel):
+    message: str
+    status_code: int
+    questions: list
+
 
 class AssessmentResults(BaseModel):
-    score : float
-    status : STATUS
-    answers : list[AssessmentAnswers]
+    score: float
+    status: STATUS
+    answers: list[AssessmentAnswers]
