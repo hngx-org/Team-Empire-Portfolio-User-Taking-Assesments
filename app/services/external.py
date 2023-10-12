@@ -69,7 +69,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
 
     return AuthenticateUser(**data)
     
-
+#this services method is deprecated; we're using only assessment_id to fetch questions
 def check_for_assessment(user_id:str,assessment_id:str,db:Session):
     """
         Check for assessment:

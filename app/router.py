@@ -335,6 +335,8 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
     assessment_id = request.assessment_id
+    '''
+    #this block of code is deprecated!
     user_assessment_instance,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
@@ -348,7 +350,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     duration_seconds = duration*60
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
-
+    '''
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
