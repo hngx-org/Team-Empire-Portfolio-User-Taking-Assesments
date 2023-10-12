@@ -317,7 +317,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     
     #retrieve assessment duration for setting cookies
-    duration = user_assessment_instance.assessment["duration_minutes"]
+    duration = user_assessment_instance.assessment.duration_minutes
     duration_seconds = duration*60
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
