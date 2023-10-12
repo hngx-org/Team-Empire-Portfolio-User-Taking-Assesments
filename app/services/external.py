@@ -5,7 +5,7 @@ from app.config import settings, Permission
 from requests import get
 from app.fake_db_response import UserAssessments,Questions #comment it after testing and grading is done!
 from app.response_schemas import AuthenticateUser
-from app.models import AssessmentCategory, UserResponse, Answer
+from app.models import AssessmentCategory, UserResponse, Answer, Assessment
 
 def authenticate_user(token: str = Header(...)):
     """
@@ -62,8 +62,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
     data = {
-        "id": "2mn3m4n23mb34n23b4234234nbm234",
-        "is_super_admin": False,
+        "id": "8b203a7b-3ebc-4f95-a451-d27c3e7a5252",
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
@@ -147,12 +146,12 @@ def fetch_single_assessment(skill_id:str,db:Session):
 
     """
     #query for assessment that the user has not taken
-    assessment_details = db.query(AssessmentCategory).filter(AssessmentCategory.skill_id == skill_id).first()
+    assessment_details = db.query(Assessment).filter(Assessment.skill_id==skill_id).first()
 
     if not assessment_details :
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found")
     
-    return assessment_details.assessment,None
+    return assessment_details,None
 
 def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Session):
     """

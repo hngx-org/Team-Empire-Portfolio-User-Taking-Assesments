@@ -7,7 +7,6 @@ class Response(BaseModel):
     status_code: int
 class AuthenticateUser(BaseModel):
     id: str
-    is_super_admin: bool
     permissions: list
 
 class Question(BaseModel):

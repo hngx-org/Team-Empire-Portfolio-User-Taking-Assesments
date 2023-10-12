@@ -29,8 +29,8 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/{user_id}", response_model=UserAssessmentResponse)
-async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
+@router.get("/", response_model=UserAssessmentResponse)
+async def get_all_user_assessments( db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
     Retrieve all assessments taken by a user.
@@ -157,16 +157,16 @@ async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), 
     }
     """
     # # Check if user_id is a valid UUID
-    if not is_valid_uuid(user_id):
+    if not is_valid_uuid(user.id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid user_id format. It should be a valid UUID."
         )
     
     # check if the user id exists in the database:
-    db_user = get_user_by_id(user_id=user_id, db=db)
+    db_user = get_user_by_id(user_id=user.id, db=db)
     if not db_user:
-        error_detail = {"error": "User not found", "user_id": user_id}
+        error_detail = {"error": "User not found", "user_id": user.id}
         raise HTTPException(status_code=404, detail=error_detail)
 
     if not Permission.check_permission(user.permissions, "assessments::view"):
@@ -174,7 +174,7 @@ async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
 
-    assessments = get_user_assessments_from_db(user_id=user_id, db=db)
+    assessments = get_user_assessments_from_db(user_id=user.id, db=db)
     response_data = {}
     if assessments:
         response_data = {
@@ -545,7 +545,7 @@ async def submit_assessment(
 
 
 
-@router.get("/{skill_id}",response_model=SingleAssessmentResponse)
+@router.get("/{skill_id}")
 def get_assessment(skill_id:int, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     
     #edit below to match the right permission 
@@ -565,7 +565,7 @@ def get_assessment(skill_id:int, db:Session = Depends(get_db), user:Authenticate
         "title": single_assessment_instance.title,
         "description" : single_assessment_instance.description,
         "duration_minutes" : single_assessment_instance.duration_minutes,
-        "pass_score":single_assessment_instance.pass_score,
+        # "pass_score":single_assessment_instance.pass_score,
         "status": single_assessment_instance.status,
         "start_date": single_assessment_instance.start_date,
         "end_date": single_assessment_instance.end_date,

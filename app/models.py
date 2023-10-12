@@ -175,7 +175,6 @@ class Assessment(BaseModel):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     duration_minutes = Column(Integer, nullable=False)
-    pass_score = Column(Float, nullable=False)
     status = Column(STATUS, nullable=False, default="pending")
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True), nullable=False)
@@ -223,7 +222,7 @@ class Skill(BaseModel):
 
     assessment = relationship("Assessment", back_populates="skill")
     parent_skill = relationship(
-        "Skill", remote_side=[id], back_populates="child_skill")
+        "Skill", remote_side="Skill.id", back_populates="child_skill")
     child_skill = relationship(
         "Skill", remote_side=[parent_skill_id], back_populates="parent_skill"
     )
@@ -265,7 +264,7 @@ class Question(BaseModel):
     question_text = Column(Text, nullable=False)
     question_type = Column(String, nullable=False)
 
-    assessment = relationship("Assessment", back_populates="question")
+    # assessment = relationship("Assessment", back_populates="question")
     answer = relationship("Answer", back_populates="question")
     user_response = relationship("UserResponse", back_populates="question")
 
