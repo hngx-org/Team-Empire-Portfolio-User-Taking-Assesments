@@ -156,7 +156,7 @@ async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), 
     status_code: 500
     }
     """
-    # Check if user_id is a valid UUID
+    # # Check if user_id is a valid UUID
     if not is_valid_uuid(user_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
