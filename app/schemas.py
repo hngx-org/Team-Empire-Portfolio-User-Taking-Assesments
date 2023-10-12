@@ -240,8 +240,21 @@ class Answer(AnswerBase):
 
 # Query fields
 class StartAssessment(BaseModel):
-    user_id: str
+    #user_id: str #the user id will henceforth be extracted from header token
     assessment_id:int
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
+
+
+class userResponse(BaseModel):
+    question_id: int
+    user_answer_id: int
+    answer_text:str
+
+class UserAssessmentanswer(BaseModel):
+    assessment_id: int
+    is_submitted: bool |None = False 
+    response: userResponse | None = None
+
+
