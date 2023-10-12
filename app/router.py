@@ -2,7 +2,12 @@ from fastapi import APIRouter, HTTPException, status, Depends,Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment,fetch_questions,fetch_single_assessment
+from app.services.external import (
+        check_for_assessment,
+        fetch_questions,
+        fetch_single_assessment, 
+        fetch_answered_and_unanswered_questions
+    )
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
@@ -11,8 +16,8 @@ from app.services.user_session import  save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
-from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse
+from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -160,7 +165,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
   
 
 
-@router.post("/start-assessment",response_model=StartAssessmentResponse)
+@router.post("/start-assessment",)
 async def start_assessment(request:StartAssessment,response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
@@ -315,6 +320,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     duration = user_assessment_instance.assessment["duration_minutes"]
     duration_seconds = duration*60
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
+    response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
@@ -328,21 +334,72 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     #extract question(id,text type) and append to questions list
     question_list =[]
     for question in questions_instance:
-        single_question = {
-            "id": question.id,
-            "question_number":question.question_no,
-            "question_text":question.question_text,
-            "question_type":question.question_type,
-            "options": question.answer["options"],
-        }
-        question_list.append(single_question)
-    response = {
-        "message": "questions fetched successfully",
-        "status_code": status.HTTP_200_OK,
-        "questions": question_list,
-    }
-    return response
+        question_list.append(Questions(
+            question_id=question.id,
+            question_no=question.question_no,
+            question_text=question.question_text,
+            question_type=question.question_type, 
+            options=question.answer.options
+            ))
 
+    response = {
+        "message": "Assessment started successfully",
+        "status_code": 200,
+        "data": question_list
+    }
+
+
+@router.get("/session")
+async def get_session_details(response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+
+    #get assessment id from cookie
+    assessment_id = response.cookies.get("assessment_session")
+    #get duration from cookie
+    duration = response.cookies.get("assessment_duration")
+    
+    #check for assessment id and duration
+    if not assessment_id or not duration:
+        redirect_url = f"{settings.FRONTEND_URL}/assessments" #get frontend url from env
+        response.headers["Location"] = redirect_url
+        response.status_code = status.HTTP_302_FOUND
+        return response
+
+    unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
+    if error:
+        raise error
+    if not unanswered_question:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Assessment already completed")
+
+    answered_question_list = []
+    unanswered_question_list = []
+    
+    for question in answered_question:
+        answered_question_list.append(Questions(
+            question_id=question.id,
+            question_no=question.question.question_no,
+            question_text=question.question.question_text,
+            question_type=question.question.question_type, 
+            options=question.answer.options,
+            user_selected_answer= question.selected_response,
+            ))
+        
+    for question in unanswered_question:
+        unanswered_question_list.append(Questions(
+            question_id=question.id,
+            question_no=question.question_no,
+            question_text=question.question_text,
+            question_type=question.question_type,
+            options=question.answer.options
+            ))
+        
+    response = {
+        "message": "Session details fetched successfully",
+        "status_code": 200,
+        "data": {
+            "answered_questions": answered_question_list,
+            "unanswered_questions": unanswered_question_list
+        }
+    }
 
 @router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
 async def get_assessment_result(

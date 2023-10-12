@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Set
 from app.schemas import STATUS, AssessmentAnswers
 
 class Response(BaseModel):
@@ -10,11 +10,18 @@ class AuthenticateUser(BaseModel):
     is_super_admin: bool
     permissions: list
 
-
-class StartAssessmentResponse(BaseModel):
+class Questions(BaseModel):
+    question_id: int
+    question_no: int
+    question_text: str
+    question_type: str
+    user_selected_answer: str | None= None
+    options: Set
+class StartAssessmentResponse(Questions):
     message: str
     status_code: int
-    questions: list
+    data:List[Questions]
+
 
 class UserAssessmentResponse(BaseModel):
     id: int
