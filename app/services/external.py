@@ -68,7 +68,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
 
     return AuthenticateUser(**data)
     
-
+#this services method is deprecated; we're using only assessment_id to fetch questions
 def check_for_assessment(user_id:str,assessment_id:str,db:Session):
     """
         Check for assessment:
@@ -129,11 +129,11 @@ def fetch_questions(assessment_id:str,db:Session):
 def fetch_single_assessment(skill_id:str,db:Session):
     """
         Get  single assessment :
-            This function gets a single assessment details if the user_id is present in the userAssessment database
+            This function gets a single assessment details if the skill_id is present in the userAssessment database
 
         Parameters:
-        - user_id : str
-            user id of the user
+        - skill_id : str
+            skill id of the user
         - db : Session
             database session
 
