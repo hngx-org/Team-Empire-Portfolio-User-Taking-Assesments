@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends,Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
+from app.services.external import check_for_assessment, fetch_questions
 from app.services.external import (
         check_for_assessment,
         fetch_questions,
@@ -16,6 +17,8 @@ from app.services.user_session import  save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
+from app.utils import is_valid_uuid
+from app.services.user_assessment import get_user_by_id
 from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
 
@@ -26,8 +29,8 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/{user_id}", response_model=List[UserAssessmentResponse])
-async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+@router.get("/{user_id}", response_model=UserAssessmentResponse)
+async def get_all_user_assessments(user_id: str, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
     Retrieve all assessments taken by a user.
@@ -46,7 +49,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
         - status_code: Status code of the request
 
     Example request:
-    
+
             curl -X GET "http://localhost:8000/api/assessments/?user_id=1" -H  "accept: application/json"
 
     Example response:
@@ -65,7 +68,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
                     "submission_date": "2021-09-08T15:43:00.000Z",
                     "assessment": {
                         "id": 1,
-                        "name": "Python Assessment",
+                        "title": "Python Assessment",
                         "description": "This is a python assessment",
                         "questions": [
                             {
@@ -125,8 +128,8 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
         }
 
     Error response:
-    
-    
+
+
                 {
                 "message": "No assessments found for this user",
                 "status_code": 404
@@ -153,16 +156,40 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
     status_code: 500
     }
     """
+    # # Check if user_id is a valid UUID
+    if not is_valid_uuid(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid user_id format. It should be a valid UUID."
+        )
+    
+    # check if the user id exists in the database:
+    db_user = get_user_by_id(user_id=user_id, db=db)
+    if not db_user:
+        error_detail = {"error": "User not found", "user_id": user_id}
+        raise HTTPException(status_code=404, detail=error_detail)
+
     if not Permission.check_permission(user.permissions, "assessments::view"):
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
-    
+
     assessments = get_user_assessments_from_db(user_id=user_id, db=db)
-   
-    
-    return assessments
-  
+    response_data = {}
+    if assessments:
+        response_data = {
+            "message": "Assessments fetched successfully",
+            "status_code": 200,
+            "assessments": assessments
+        }
+    else:
+        response_data = {
+            "message": "User has no assessments",
+            "status_code": 404,
+            "assessments": []
+        }
+
+    return response_data
 
 
 @router.post("/start-assessment",)
@@ -348,7 +375,6 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         "data": question_list
     }
 
-
 @router.get("/session")
 async def get_session_details(response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
 
@@ -461,6 +487,8 @@ async def get_assessment_result(
     
     response = {
         "score": score,
+        "user_id": user_id,
+        "assessment_id": assessment_id,
         "status": assessment_status,
         "answers": answers
     }
