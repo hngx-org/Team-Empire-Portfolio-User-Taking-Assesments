@@ -6,13 +6,8 @@ from app.services.external import check_for_assessment,fetch_questions,fetch_sin
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
-<<<<<<< HEAD
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
-from app.services.user_session import  save_session
-=======
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults,SingleAssessmentResponse
-from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
->>>>>>> d415e4d6ea1cf7074572ecdf8cbd4743313bff1b
+from app.services.user_session import  save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
@@ -461,6 +456,8 @@ async def submit_assessment(
     return save_session(response, user.id,db=db)
 
 
+
+
 @router.get("/get_single_assessment",response_model=SingleAssessmentResponse)
 def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     
@@ -487,4 +484,5 @@ def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=De
         "start_date": single_assessment_instance.assessment["start_date"] ,
         "end_date": single_assessment_instance.assessment["end_date"] ,
     }
+
     return response
