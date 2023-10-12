@@ -5,7 +5,7 @@ from app.config import settings, Permission
 from requests import get
 from app.fake_db_response import UserAssessments,Questions #comment it after testing and grading is done!
 from app.response_schemas import AuthenticateUser
-
+from app.models import AssessmentCategory
 
 def authenticate_user(token: str = Header(...)):
     """
@@ -125,7 +125,7 @@ def fetch_questions(assessment_id:str,db:Session):
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     return questions,None
     
-def fetch_single_assessment(user_id:str,db:Session):
+def fetch_single_assessment(skill_id:str,db:Session):
     """
         Get  single assessment :
             This function gets a single assessment details if the user_id is present in the userAssessment database
@@ -145,10 +145,10 @@ def fetch_single_assessment(user_id:str,db:Session):
 
     """
     #query for assessment that the user has not taken
-    assessment_details = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.status=="pending").first()
+    assessment_details = db.query(AssessmentCategory).filter(AssessmentCategory.skill_id == skill_id).first()
 
     if not assessment_details :
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found")
     
-    return assessment_details,None
+    return assessment_details.assessment,None
 

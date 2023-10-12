@@ -458,15 +458,15 @@ async def submit_assessment(
 
 
 
-@router.get("/get_single_assessment",response_model=SingleAssessmentResponse)
-def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+@router.get("/{skill_id}",response_model=SingleAssessmentResponse)
+def get_assessment(skill_id:int, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     
     #edit below to match the right permission 
-    if not Permission.check_permission(user.permissions, "assessment.update.own"):
+    if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
 
-    single_assessment_instance,error = fetch_single_assessment(user_id=user.id,db=db)
+    single_assessment_instance,error = fetch_single_assessment(skill_id=skill_id,db=db)
     
     #check for corresponding errors
     if error:
@@ -474,15 +474,15 @@ def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=De
     if not single_assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     response = {
-        "assessment_id":single_assessment_instance.assessment_id,
-        "skill_id": single_assessment_instance.assessment["skill_id"],
-        "title": single_assessment_instance.assessment["title"],
-        "description" : single_assessment_instance.assessment["description"],
-        "duration_minutes" : single_assessment_instance.assessment["duration_minutes"] ,
-        "pass_score":single_assessment_instance.assessment["pass_score"],
-        "status": single_assessment_instance.assessment["status"],
-        "start_date": single_assessment_instance.assessment["start_date"] ,
-        "end_date": single_assessment_instance.assessment["end_date"] ,
-    }
+        "assessment_id":single_assessment_instance.id,
+        "skill_id": skill_id,
+        "title": single_assessment_instance.title,
+        "description" : single_assessment_instance.description,
+        "duration_minutes" : single_assessment_instance.duration_minutes,
+        "pass_score":single_assessment_instance.pass_score,
+        "status": single_assessment_instance.status,
+        "start_date": single_assessment_instance.start_date,
+        "end_date": single_assessment_instance.end_date,
+        }
 
     return response
