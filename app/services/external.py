@@ -5,7 +5,7 @@ from app.config import settings, Permission
 from requests import get
 from app.fake_db_response import UserAssessments,Questions #comment it after testing and grading is done!
 from app.response_schemas import AuthenticateUser
-from app.models import AssessmentCategory
+from app.models import AssessmentCategory, UserResponse, Answer
 
 def authenticate_user(token: str = Header(...)):
     """
@@ -122,8 +122,8 @@ def fetch_questions(assessment_id:str,db:Session):
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
-        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
-    return questions,None
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+    return questions, None
     
 def fetch_single_assessment(skill_id:str,db:Session):
     """
@@ -152,3 +152,50 @@ def fetch_single_assessment(skill_id:str,db:Session):
     
     return assessment_details.assessment,None
 
+def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Session):
+    """
+        Fetch answered and unanswered questions:
+            This function fetches the answered and unanswered questions under the assessment_id
+
+        Parameters:
+        - assessment_id : str
+            assessment id of the assessment
+        - user_id : str
+            user id of the user
+        - db : Session
+            database session
+
+        Returns:
+        - answered_questions : list
+            returns the list of answered questions under the assessment_id
+
+        - questions : list
+            returns the list of unanswered questions under the assessment_id
+        
+        - None : None
+            returns None if there is no match
+        
+        - HTTPException : HTTPException
+            returns HTTPException if there is no match
+    """
+    #query for any questions corresponding to the assessment_id
+    questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
+    if not questions:
+        #for any reason if  there are no questions return false
+        err_message = "No questions found under the assessment_id"
+        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+    
+    #query for any questions corresponding to the assessment_id
+    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment.assessment_id==assessment_id, UserResponse.user_assessment.user_id==user_id).all()
+    if not answered_questions:
+        #for any reason if  there are no questions return false
+        err_message = "No questions found under the assessment_id"
+        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+    
+    for q in answered_questions:
+        for question in questions:
+            if q.question_id == question.id:
+                questions.remove(question)
+
+    return questions, answered_questions, None
+        
