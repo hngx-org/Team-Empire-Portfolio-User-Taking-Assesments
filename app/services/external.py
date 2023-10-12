@@ -35,6 +35,7 @@ def authenticate_user(token: str = Header(...)):
     # Permission.check_permissions(request.get('user').get('permissions'))
     data = {
         "id": request.get("user").get("user_id"),
+        "is_super_admin": False,
         "permissions": request.get("user").get("permissions"),
     }
 
@@ -62,6 +63,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
     
     data = {
         "id": "2mn3m4n23mb34n23b4234234nbm234",
+        "is_super_admin": False,
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 

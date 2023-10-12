@@ -10,6 +10,11 @@ class AuthenticateUser(BaseModel):
     is_super_admin: bool
     permissions: list
 
+class Question(BaseModel):
+    id: int
+    question_text: str
+    question_type: str
+
 class Questions(BaseModel):
     question_id: int
     question_no: int
@@ -23,13 +28,34 @@ class StartAssessmentResponse(Questions):
     data:List[Questions]
 
 
-class UserAssessmentResponse(BaseModel):
+class Assessment(BaseModel):
+    id: int
+    title: str
+    description: str
+    questions: List[Question]
+
+
+class UserAssessment(BaseModel):
     id: int
     user_id: str
     assessment_id: int
     score: float
     status: STATUS
     submission_date: str
+    assessment: Assessment
+
+
+class UserAssessmentResponse(BaseModel):
+    message: str
+    status_code: int
+    assessments: List[UserAssessment]
+
+
+class StartAssessmentResponse(BaseModel):
+    message: str
+    status_code: int
+    questions: list
+
 
 class SingleAssessmentResponse(BaseModel):
     assessment_id: int
