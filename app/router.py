@@ -487,6 +487,8 @@ async def get_assessment_result(
     
     response = {
         "score": score,
+        "user_id": user_id,
+        "assessment_id": assessment_id,
         "status": assessment_status,
         "answers": answers
     }

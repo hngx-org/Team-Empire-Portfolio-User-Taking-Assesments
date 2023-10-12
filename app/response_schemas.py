@@ -69,6 +69,8 @@ class SingleAssessmentResponse(BaseModel):
     end_date: str
 
 class AssessmentResults(BaseModel):
-    score: float
-    status: STATUS
-    answers: list[AssessmentAnswers]
+    score : float
+    status : STATUS
+    user_id : str
+    assessment_id: int
+    answers : list[AssessmentAnswers]
