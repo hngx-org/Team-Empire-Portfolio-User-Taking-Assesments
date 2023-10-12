@@ -1,13 +1,18 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends,Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment,fetch_questions
+from app.services.external import check_for_assessment,fetch_questions,fetch_single_assessment
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
+<<<<<<< HEAD
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults
 from app.services.user_session import  save_session
+=======
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults,SingleAssessmentResponse
+from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
+>>>>>>> d415e4d6ea1cf7074572ecdf8cbd4743313bff1b
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
@@ -161,7 +166,7 @@ async def get_all_user_assessments(user_id:str, db:Session = Depends(get_db), us
 
 
 @router.post("/start-assessment",response_model=StartAssessmentResponse)
-async def start_assessment(request:StartAssessment,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def start_assessment(request:StartAssessment,response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
     '''
     Start an assessment for a user.
 
@@ -191,53 +196,73 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
             "questions": [
                 {
                     "id": 1,
+                    "question_number":1,
                     "question_text": "What is Python?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option 1","B. another answer","C. third option"]
                 },
                 {
                     "id": 2,
+                    "question_number":2,
                     "question_text": "What is Python used for?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 3,
+                    "question_number":3,
                     "question_text": "What is the difference between a list and a tuple?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option 1","B. another answer","C. third option"]
                 },
                 {
                     "id": 4,
+                    "question_number":4,
                     "question_text": "What is the difference between a list and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. first option ","B.another answer","C. third option"]
                 },
                 {
                     "id": 5,
+                    "question_number":5,
                     "question_text": "What is the difference between a list and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 6,
+                    "question_number":6,
                     "question_text": "What is the difference between a set and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 7,
+                    "question_number":7,
                     "question_text": "What is the difference between a tuple and a dictionary?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 8,
+                    "question_number":8,
                     "question_text": "What is the difference between a tuple and a set?",
                     "question_type": "MCQ"
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 9,
+                    "question_number":9,
                     "question_text": "What is the difference between a dictionary and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 },
                 {
                     "id": 10,
+                    "question_number":10,
                     "question_text": "What is the difference between a list, a tuple, a dictionary and a set?",
-                    "question_type": "MCQ"
+                    "question_type": "MCQ",
+                    "options":["A. option A","B. another answer","C. third option"]
                 }
             ]
         }
@@ -283,12 +308,19 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
     assessment_id = request.assessment_id
-    _,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
+    user_assessment_instance,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
     if err:
         raise err
+    if not user_assessment_instance:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     
+    #retrieve assessment duration for setting cookies
+    duration = user_assessment_instance.assessment["duration_minutes"]
+    duration_seconds = duration*60
+    response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
+
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
@@ -299,18 +331,16 @@ async def start_assessment(request:StartAssessment,db:Session = Depends(get_db),
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
     
     #extract question(id,text type) and append to questions list
-    #uncomment the block below after testing
-    '''
     question_list =[]
     for question in questions_instance:
         single_question = {
             "id": question.id,
+            "question_number":question.question_no,
             "question_text":question.question_text,
-            "question_type":question.question_type
+            "question_type":question.question_type,
+            "options": question.answer["options"],
         }
         question_list.append(single_question)
-    '''
-    question_list = questions_instance #comment this line after testing and grading
     response = {
         "message": "questions fetched successfully",
         "status_code": status.HTTP_200_OK,
@@ -429,3 +459,32 @@ async def submit_assessment(
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
     return save_session(response, user.id,db=db)
+
+
+@router.get("/get_single_assessment",response_model=SingleAssessmentResponse)
+def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+    
+    #edit below to match the right permission 
+    if not Permission.check_permission(user.permissions, "assessment.update.own"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
+
+    single_assessment_instance,error = fetch_single_assessment(user_id=user.id,db=db)
+    
+    #check for corresponding errors
+    if error:
+        raise error
+    if not single_assessment_instance:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
+    response = {
+        "assessment_id":single_assessment_instance.assessment_id,
+        "skill_id": single_assessment_instance.assessment["skill_id"],
+        "title": single_assessment_instance.assessment["title"],
+        "description" : single_assessment_instance.assessment["description"],
+        "duration_minutes" : single_assessment_instance.assessment["duration_minutes"] ,
+        "pass_score":single_assessment_instance.assessment["pass_score"],
+        "status": single_assessment_instance.assessment["status"],
+        "start_date": single_assessment_instance.assessment["start_date"] ,
+        "end_date": single_assessment_instance.assessment["end_date"] ,
+    }
+    return response
