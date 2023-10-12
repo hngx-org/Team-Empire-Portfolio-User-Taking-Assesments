@@ -26,7 +26,7 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     - score : float
         score of the user
     - status : str
-        status of the user
+        status of the assessment
     - db_questions : List[Question]
         list of questions in the assessment
         
@@ -39,7 +39,7 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     
     assessment = query.first()
 
-    if not query:
+    if not assessment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Assessment with id {assessment_id} not found",
@@ -52,6 +52,11 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
                     .filter(Question.assessment_id == assessment_id).all()
     
     
+    if score is None and assessment_status is None and not db_questions:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting results for {assessment_id}",
+        )
     # assessment_obj = None
 
     # for assessment in UserAssessments:
