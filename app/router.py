@@ -7,10 +7,12 @@ from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults,SingleAssessmentResponse
-from app.services.user_session import SessionData, get_all_session, get_session_detail, save_session
+from app.services.user_session import  save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
 from app.response_schemas import AuthenticateUser
+from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -409,14 +411,15 @@ async def get_assessment_result(
 
     return response
 
-
-@router.post("/save_session/")
-def save_endpoint(data: SessionData, user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
+@router.post("/submit", )
+async def submit_assessment(
+    response:UserAssessmentanswer, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)
+):
     """
-    Saves the session data for a user.
+    Submit an assessment for a user.
 
     Method: POST
-    Request_body: Session data
+    Request_body: User ID, Assessment ID, Answers
 
     Response:
     
@@ -424,226 +427,36 @@ def save_endpoint(data: SessionData, user_id: int, user:AuthenticateUser=Depends
             - status_code: Status code of the request
 
     Error Response:
-    
-                - message: Message indicating the status of the request
-                - status_code: Status code of the request
+
+            - message: Message indicating the status of the request
+            - status_code: Status code of the request
 
     Example request:
 
-            curl -X POST "http://localhost:8000/api/assessments/save_session" -H  "accept: application/json" -H  "Content-Type: application/json" -d "{\"user_id\":1,\"assessment_id\":1,\"answers\":[{\"question_id\":1,\"answer\":\"Python is a programming language\"},{\"question_id\":2,\"answer\":\"Python is used for web development\"},{\"question_id\":3,\"answer\":\"List is mutable\"},{\"question_id\":4,\"answer\":\"List is mutable\"},{\"question_id\":5,\"answer\":\"List is mutable\"},{\"question_id\":6,\"answer\":\"Set is mutable\"},{\"question_id\":7,\"answer\":\"Tuple is immutable\"},{\"question_id\":8,\"answer\":\"Tuple is immutable\"},{\"question_id\":9,\"answer\":\"Dictionary is mutable\"},{\"question_id\":10,\"answer\":\"List is mutable, Tuple is immutable, Dictionary is mutable, Set is mutable\"}]}"
+            curl -X POST "http://localhost:8000/api/assessments/1/submit" -H  "accept: application/json" -H  \
+            "Content-Type: application/json" -d "{\"user_id\":\"1\",\"assessment_id\":1,\"answers\":[{\"question_id\":1,\"user_answer_id\":1},\
+                {\"question_id\":2,\"user_answer_id\":2},{\"question_id\":3,\"user_answer_id\":3},{\"question_id\":4,\"user_answer_id\":4},\
+                    {\"question_id\":5,\"user_answer_id\":5},{\"question_id\":6,\"user_answer_id\":6},{\"question_id\":7,\"user_answer_id\":7},\
+                        {\"question_id\":8,\"user_answer_id\":8},{\"question_id\":9,\"user_answer_id\":9},{\"question_id\":10,\"user_answer_id\":10}]}"
 
     Example response:
-
-            {
-            "message": "Session saved successfully",
-            "status_code": 200
-            }
-
-    Error response:
-
+    
                 {
-                "message": "Assessment does not exist",
-                "status_code": 404
+                "message": "Assessment submitted successfully",
+                "status_code": 200
                 }
-    """
 
-    if not Permission.check_permission(user.permissions, "assessment.update.own" ):
+    """
+    if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to save session")
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to submit assessments")
+    
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-    return save_session(data, user_id)
+    return save_session(response, user.id,db=db)
 
-@router.get("/get_all_session/{user_id}")
-def get_all_endpoint(user_id: int, user:AuthenticateUser=Depends(authenticate_user)):
 
-    """
-    Retrieves all sessions for a user.
 
-    Method: GET
-    Request: User ID
-
-    Response:
-        
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
-            - sessions: List of sessions for the user
-
-    Error Response:
-
-                - message: Message indicating the status of the request
-                - status_code: Status code of the request
-
-    Example request:
-
-            curl -X GET "http://localhost:8000/api/assessments/get_all_session/1" -H  "accept: application/json"
-
-    Example response:
-
-            {
-            "message": "Sessions fetched successfully",
-            "status_code": 200,
-            "sessions": [
-                {
-                    "id": 1,
-                    "user_id": 1,
-                    "assessment_id": 1,
-                    "answers": [
-                        {
-                            "question_id": 1,
-                            "answer": "Python is a programming language"
-                        },
-                        {
-                            "question_id": 2,
-                            "answer": "Python is used for web development"
-                        },
-                        {
-                            "question_id": 3,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 4,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 5,
-                            "answer": "List is mutable"
-                        },
-                        {
-                            "question_id": 6,
-                            "answer": "Set is mutable"
-                        },
-                        {
-                            "question_id": 7,
-                            "answer": "Tuple is immutable"
-                        },
-                        {
-                            "question_id": 8,
-                            "answer": "Tuple is immutable"
-                        },
-                        {
-                            "question_id": 9,
-                            "answer": "Dictionary is mutable"
-                        },
-                        {
-                            "question_id": 10,
-                            "answer": "List is mutable, Tuple is immutable, Dictionary is mutable, Set is mutable"
-                        }
-                    ]
-                }
-            ]
-
-    Error response:
-        
-                    {
-                    "message": "User does not exist",
-                    "status_code": 404
-                    }    
-    """
-
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get all sessions")
-    return get_all_session(user_id)
-
-@router.get("/get_session_detail/{user_id}/{assessment_id}")
-def get_detail_endpoint(user_id: int, assessment_id: int, user:AuthenticateUser=Depends(authenticate_user)):
-    """
-    Retrieves session details for a user.
-
-    Method: GET
-    Request: User ID, Assessment ID
-
-    Response:
-            
-                - message: Message indicating the status of the request
-                - status_code: Status code of the request
-                - session: Session details for the user
-
-    Error Response:
-
-                - message: Message indicating the status of the request
-                - status_code: Status code of the request
-
-    Example request:
-
-            curl -X GET "http://localhost:8000/api/assessments/get_session_detail/1/1" -H  "accept: application/json"
-
-    Example response:
-
-            {
-            "message": "Session fetched successfully",
-            "status_code": 200,
-            "session": {
-                "id": 1,
-                "user_id": 1,
-                "assessment_id": 1,
-                "answers": [
-                    {
-                        "question_id": 1,
-                        "answer": "Python is a programming language"
-                    },
-                    {
-                        "question_id": 2,
-                        "answer": "Python is used for web development"
-                    },
-                    {
-                        "question_id": 3,
-                        "answer": "List is mutable"
-                    },
-                    {
-                        "question_id": 4,
-                        "answer": "List is mutable"
-                    },
-                    {
-                        "question_id": 5,
-                        "answer": "List is mutable"
-                    },
-                    {
-                        "question_id": 6,
-                        "answer": "Set is mutable"
-                    },
-                    {
-                        "question_id": 7,
-                        "answer": "Tuple is immutable"
-                    },
-                    {
-                        "question_id": 8,
-                        "answer": "Tuple is immutable"
-                    },
-                    {
-                        "question_id": 9,
-                        "answer": "Dictionary is mutable"
-                    },
-                    {
-                        "question_id": 10,
-                        "answer": "List is mutable, Tuple is immutable, Dictionary is mutable, Set is mutable"
-                    }
-                ]
-            }
-        }
-
-    Error response:
-
-                    {
-                    "message": "Session does not exist",
-                    "status_code": 404
-                    }
-
-    Error response:
-
-                    {
-                    "message": "User does not exist",
-                    "status_code": 404
-                    }
-    """
-
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to get session detail")
-    
-    # check if user is eligible to get details first. user_id comes from auth
-    return get_session_detail(user_id, assessment_id)
 
 @router.get("/get_single_assessment",response_model=SingleAssessmentResponse)
 def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
@@ -671,4 +484,5 @@ def get_single_assessment(db:Session = Depends(get_db), user:AuthenticateUser=De
         "start_date": single_assessment_instance.assessment["start_date"] ,
         "end_date": single_assessment_instance.assessment["end_date"] ,
     }
+
     return response

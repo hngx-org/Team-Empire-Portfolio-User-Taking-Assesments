@@ -245,3 +245,16 @@ class StartAssessment(BaseModel):
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
+
+
+class userResponse(BaseModel):
+    question_id: int
+    user_answer_id: int
+    answer_text:str
+
+class UserAssessmentanswer(BaseModel):
+    assessment_id: int
+    is_submitted: bool |None = False 
+    response: userResponse | None = None
+
+
