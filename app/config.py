@@ -77,4 +77,4 @@ class Permissions():
   
 
 settings = Settings()
-Permission = Permissions(permissions=['assessments::view', 'assessment::take', 'results::view', 'assessments::start'])
+Permission = Permissions(permissions=["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"])
