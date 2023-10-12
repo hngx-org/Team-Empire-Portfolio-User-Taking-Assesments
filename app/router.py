@@ -524,7 +524,6 @@ def get_assessment(skill_id:int, db:Session = Depends(get_db), user:Authenticate
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
 
     single_assessment_instance,error = fetch_single_assessment(skill_id=skill_id,db=db)
-    
     #check for corresponding errors
     if error:
         raise error

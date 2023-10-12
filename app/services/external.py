@@ -128,11 +128,11 @@ def fetch_questions(assessment_id:str,db:Session):
 def fetch_single_assessment(skill_id:str,db:Session):
     """
         Get  single assessment :
-            This function gets a single assessment details if the user_id is present in the userAssessment database
+            This function gets a single assessment details if the skill_id is present in the userAssessment database
 
         Parameters:
-        - user_id : str
-            user id of the user
+        - skill_id : str
+            skill id of the user
         - db : Session
             database session
 
