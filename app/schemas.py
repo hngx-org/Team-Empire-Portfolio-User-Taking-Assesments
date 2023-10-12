@@ -240,7 +240,7 @@ class Answer(AnswerBase):
 
 # Query fields
 class StartAssessment(BaseModel):
-    user_id: str
+    #user_id: str #the user id will henceforth be extracted from header token
     assessment_id:int
 
 class UserAssessmentQuery(BaseModel):
