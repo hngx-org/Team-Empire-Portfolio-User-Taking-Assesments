@@ -29,7 +29,7 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/", response_model=UserAssessmentResponse)
+@router.get("", response_model=UserAssessmentResponse)
 async def get_all_user_assessments( db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
@@ -362,12 +362,13 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     
     #extract question(id,text type) and append to questions list
     question_list =[]
+    
     for question in questions_instance:
         question_list.append(Questions(
             question_id=question.id,
             question_no=question.question_no,
-            question_text=question.question_text,
-            question_type=question.question_type, 
+            question_text=question.question_text ,
+            question_type=question.question_type ,
             options=question.answer.options
             ))
 
@@ -376,6 +377,8 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         "status_code": 200,
         "data": question_list
     }
+
+    return response
 
 @router.get("/session")
 async def get_session_details(response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):

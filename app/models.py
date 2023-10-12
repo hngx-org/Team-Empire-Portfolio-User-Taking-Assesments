@@ -150,7 +150,6 @@ class Assessment(BaseModel):
     - title: title of the assessment.
     - description: description of the assessment.
     - duration_minutes: duration of the assessment in minutes.
-    - pass_score: minimum score to pass the assessment.
     - status: status of the assessment.
     - start_date: start date of the assessment.
     - end_date: end date of the assessment.
@@ -265,7 +264,7 @@ class Question(BaseModel):
     question_type = Column(String, nullable=False)
 
     # assessment = relationship("Assessment", back_populates="question")
-    answer = relationship("Answer", back_populates="question")
+    answer = relationship("Answer", back_populates="question", lazy="joined", uselist=False)
     user_response = relationship("UserResponse", back_populates="question")
 
 
@@ -279,7 +278,7 @@ class Answer(BaseModel):
 
     - question_id: foreign key to question table.
     - answer_text: text of the answer.
-    - is_correct: boolean value to indicate if the answer is correct or not.
+    - correct_option: correct option of the answer.
 
     Inherited columns:
     - id: primary key of the table.
@@ -298,7 +297,7 @@ class Answer(BaseModel):
     options = Column(ARRAY(String))
     correct_option = Column(String)
 
-    question = relationship("Question", back_populates="answer")
+    question = relationship("Question", back_populates="answer",  lazy="joined", uselist=False)
     user_response = relationship("UserResponse", back_populates="answer")
 
 

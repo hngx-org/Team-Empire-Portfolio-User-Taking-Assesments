@@ -85,6 +85,6 @@ def get_db_unyield():
             It is used mainly for writing to the database externally
             from the entire application.
     """
-    create_database()
+    # create_database()
     db = SessionLocal()
     return db

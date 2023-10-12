@@ -118,7 +118,10 @@ def fetch_questions(assessment_id:str,db:Session):
         - questions : list
             returns the list of questions under the assessment_id
     """
-    #query for any questions corresponding to the assessment_id
+    # #query for any questions corresponding to the assessment_id and do a join with the answers table
+    # question_and_answers = db.query(Assessment).filter(Assessment.id==assessment_id).first()
+    
+
     questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
     if not questions:
         #for any reason if  there are no questions return false
