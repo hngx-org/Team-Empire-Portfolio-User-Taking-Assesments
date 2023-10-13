@@ -377,7 +377,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         user_id=user.id,
         assessment_id=assessment_id,
         score=0,
-        status="in_progress",
+        status="pending",
         time_spent=0,
         submission_date=None
     )
