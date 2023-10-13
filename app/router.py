@@ -329,29 +329,28 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         message: "failed to start assessment",
         status_code: 500
         }
-
     '''
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
     assessment_id = request.assessment_id
-    '''
-    #this block of code is deprecated!
-    user_assessment_instance,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
+
+    #check for assessment to get duration and set cookie
+    assessment_instance,err = check_for_assessment(assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
     if err:
         raise err
-    if not user_assessment_instance:
+    if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     
     #retrieve assessment duration for setting cookies
-    duration = user_assessment_instance.assessment.duration_minutes
+    duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
-    '''
+
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
@@ -373,13 +372,13 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
             options=question.answer.options
             ))
 
-    response = {
+    resp = {
         "message": "Assessment started successfully",
         "status_code": 200,
         "data": question_list
     }
 
-    return response
+    return resp
 
 @router.get("/session")
 async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
@@ -425,7 +424,7 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
                 options=question.answer.options
                 ))
         
-    response = {
+    resp = {
         "message": "Session details fetched successfully",
         "status_code": 200,
         "data": {
@@ -433,6 +432,7 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
             "unanswered_questions": unanswered_question_list
         }
     }
+    return resp #@blac_dev take a look here too 
 
     return response
 
