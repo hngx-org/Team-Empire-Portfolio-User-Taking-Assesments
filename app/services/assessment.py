@@ -2,7 +2,7 @@ from pprint import pprint
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from fastapi import HTTPException,status
-from app.models import UserAssessment, Question, Answer
+from app.models import UserAssessment, Question, Answer, User
 from app.config import settings
 from app.schemas import AssessmentAnswers
 from app.fake_db_response import UserAssessments, Questions, Answers
@@ -31,6 +31,14 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
         list of questions in the assessment
         
     """
+
+    valid_user = db.query(User).filter(User.id == user_id).first()
+
+    if not valid_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found",
+        )
     
     query = db.query(UserAssessment)\
         .filter(
@@ -52,7 +60,19 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
                     .filter(Question.assessment_id == assessment_id).all()
     
     
-    if score is None and assessment_status is None and not db_questions:
+    questions_with_answers = []
+    for item in db_questions:
+        var = {}
+        question = item.__dict__
+        var['question_text'] = question['question_text']
+
+        answer = question['answer'].__dict__
+        var['answer_text'] = answer['correct_option']
+        
+        questions_with_answers.append(var)
+
+
+    if score is None and assessment_status is None and not questions_with_answers:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting results for {assessment_id}",
@@ -85,4 +105,4 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     #         else:
     #             continue
 
-    return score, assessment_status, db_questions
+    return score, assessment_status, questions_with_answers

@@ -503,6 +503,8 @@ async def get_assessment_result(
 
 
     """
+    user_id = user.id
+
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
