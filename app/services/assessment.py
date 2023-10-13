@@ -60,7 +60,19 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
                     .filter(Question.assessment_id == assessment_id).all()
     
     
-    if score is None and assessment_status is None and not db_questions:
+    questions_with_answers = []
+    for item in db_questions:
+        var = {}
+        question = item.__dict__
+        var['question_text'] = question['question_text']
+
+        answer = question['answer'].__dict__
+        var['answer_text'] = answer['correct_option']
+        
+        questions_with_answers.append(var)
+
+
+    if score is None and assessment_status is None and not questions_with_answers:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting results for {assessment_id}",
@@ -93,4 +105,4 @@ def get_assessment_results(user_id: str, assessment_id: int, db : Session):
     #         else:
     #             continue
 
-    return score, assessment_status, db_questions
+    return score, assessment_status, questions_with_answers

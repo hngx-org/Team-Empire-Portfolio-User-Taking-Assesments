@@ -4,7 +4,7 @@ from uuid import UUID
 from enum import Enum
 
 class AssessmentAnswers(BaseModel):
-    question_text : str
+    question_text : str 
     answer_text: str
     
 class STATUS(Enum):
