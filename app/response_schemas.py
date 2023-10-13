@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Set
+from typing import List, Set, Optional
 from app.schemas import STATUS, AssessmentAnswers
 
 class Response(BaseModel):
@@ -19,7 +19,7 @@ class Questions(BaseModel):
     question_no: int
     question_text: str
     question_type: str
-    user_selected_answer: str | None= None
+    user_selected_answer: Optional[str] = None
     options: Set
 class StartAssessmentResponse(Questions):
     message: str

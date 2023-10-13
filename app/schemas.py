@@ -254,7 +254,7 @@ class userResponse(BaseModel):
 
 class UserAssessmentanswer(BaseModel):
     assessment_id: int
-    is_submitted: bool |None = False 
-    response: userResponse | None = None
+    is_submitted: Optional[bool] = False 
+    response: Optional[userResponse] = None
 
 
