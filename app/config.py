@@ -25,6 +25,7 @@ class Settings:
     LOCAL = config("LOCAL", cast=bool, default=False)
     AUTH_SERVICE_URL = config("AUTH_SERVICE_URL")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
+    FRONTEND_URL = "https://google.com"
 
 # a class that takes in a list of permissions and checks if a permission is present in the list
 class Permissions():

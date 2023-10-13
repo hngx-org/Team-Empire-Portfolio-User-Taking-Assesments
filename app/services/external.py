@@ -62,21 +62,17 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
     data = {
-        "id": "8b203a7b-3ebc-4f95-a451-d27c3e7a5252",
+        "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
     return AuthenticateUser(**data)
     
-#this services method is deprecated; we're using only assessment_id to fetch questions
-def check_for_assessment(user_id:str,assessment_id:str,db:Session):
+def check_for_assessment(assessment_id:str,db:Session):
     """
         Check for assessment:
-            This function checks if the user_id and assessment_id are present in the database
-
+            This function checks for assessment duration_minutes
         Parameters:
-        - user_id : str
-            user id of the user
         - assessment_id : str
             assessment id of the assessment
         - db : Session
@@ -84,17 +80,16 @@ def check_for_assessment(user_id:str,assessment_id:str,db:Session):
 
 
         Returns:
-        - check : UserAssessment
-            returns the UserAssessment object if there is a match
+        - check : Assessment
+            returns the Assessment object if there is a match
         - None : None
             returns None if there is no match
 
     """
-    #validate if the assessment_id and user_id corresponds
-    check = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==assessment_id).first()
-
+    #validate if the assessment_id  corresponds
+    check = db.query(Assessment).filter(Assessment.id==assessment_id).first()
     if not check :
-        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found for provided user_id and assessment_id ")
+        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found for provided assessment_id ")
     
     return check,None
     
@@ -118,7 +113,7 @@ def fetch_questions(assessment_id:str,db:Session):
         - questions : list
             returns the list of questions under the assessment_id
     """
-    #query for any questions corresponding to the assessment_id
+    # #query for any questions corresponding to the assessment_id and do a join with the answers table
     questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
     if not questions:
         #for any reason if  there are no questions return false
@@ -187,16 +182,19 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     
     #query for any questions corresponding to the assessment_id
-    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment.assessment_id==assessment_id, UserResponse.user_assessment.user_id==user_id).all()
-    if not answered_questions:
+    user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id).first()
+    if not user_assement_instance:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     
-    for q in answered_questions:
-        for question in questions:
-            if q.question_id == question.id:
-                questions.remove(question)
+    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
+
+    if answered_questions != []:
+        for q in answered_questions:
+            for question in questions:
+                if q.question_id == question.id:
+                    questions.remove(question)
 
     return questions, answered_questions, None
         

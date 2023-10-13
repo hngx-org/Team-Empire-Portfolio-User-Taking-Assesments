@@ -80,18 +80,15 @@ class User(UUIDBaseModel):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    token = Column(String, nullable=True)
     password = Column(String, nullable=False)
     section_order = Column(Text, nullable=True)  # Explain section_order
     provider = Column(String, nullable=True)  # Explain provider
     profile_pic = Column(Text, nullable=True)
-    refresh_token = Column(String, nullable=True)
+    refresh_token = Column(String, default="")
     createdAt = Column(TIMESTAMP(timezone=True),
                        nullable=False, server_default=text("now()"))
-    updatedAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, onupdate=text("now()"))
 
-    user_assessment = relationship("UserAssessment", back_populates="user")
+    user_assessment = relationship("UserAssessment", back_populates="user", lazy="joined")
     user_badge = relationship("UserBadge", back_populates="user")
 
 
@@ -135,7 +132,7 @@ class UserAssessment(BaseModel):
     user = relationship("User", back_populates="user_assessment")
     assessment = relationship("Assessment", back_populates="user_assessment")
     user_response = relationship(
-        "UserResponse", back_populates="user_assessment")
+        "UserResponse", back_populates="user_assessment", lazy="joined")
 
 
 class Assessment(BaseModel):
@@ -150,7 +147,6 @@ class Assessment(BaseModel):
     - title: title of the assessment.
     - description: description of the assessment.
     - duration_minutes: duration of the assessment in minutes.
-    - pass_score: minimum score to pass the assessment.
     - status: status of the assessment.
     - start_date: start date of the assessment.
     - end_date: end date of the assessment.
@@ -265,7 +261,7 @@ class Question(BaseModel):
     question_type = Column(String, nullable=False)
 
     # assessment = relationship("Assessment", back_populates="question")
-    answer = relationship("Answer", back_populates="question")
+    answer = relationship("Answer", back_populates="question", lazy="joined", uselist=False)
     user_response = relationship("UserResponse", back_populates="question")
 
 
@@ -279,7 +275,7 @@ class Answer(BaseModel):
 
     - question_id: foreign key to question table.
     - answer_text: text of the answer.
-    - is_correct: boolean value to indicate if the answer is correct or not.
+    - correct_option: correct option of the answer.
 
     Inherited columns:
     - id: primary key of the table.
@@ -298,7 +294,7 @@ class Answer(BaseModel):
     options = Column(ARRAY(String))
     correct_option = Column(String)
 
-    question = relationship("Question", back_populates="answer")
+    question = relationship("Question", back_populates="answer",  lazy="joined", uselist=False)
     user_response = relationship("UserResponse", back_populates="answer")
 
 
@@ -381,7 +377,7 @@ class UserResponse(BaseModel):
     selected_response = Column(Text)
 
     user_assessment = relationship(
-        "UserAssessment", back_populates="user_response")
+        "UserAssessment", back_populates="user_response", lazy="joined")
     question = relationship("Question", back_populates="user_response")
     answer = relationship("Answer", back_populates="user_response")
 

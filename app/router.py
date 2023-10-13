@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Response
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -21,6 +21,8 @@ from app.utils import is_valid_uuid
 from app.services.user_assessment import get_user_by_id
 from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
+from starlette.responses import RedirectResponse
+from app.models import UserAssessment
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -29,7 +31,7 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("/", response_model=UserAssessmentResponse)
+@router.get("", response_model=UserAssessmentResponse)
 async def get_all_user_assessments( db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
@@ -328,29 +330,28 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         message: "failed to start assessment",
         status_code: 500
         }
-
     '''
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
     
     assessment_id = request.assessment_id
-    '''
-    #this block of code is deprecated!
-    user_assessment_instance,err = check_for_assessment(user_id=user.id,assessment_id=assessment_id,db=db)
+
+    #check for assessment to get duration and set cookie
+    assessment_instance,err = check_for_assessment(assessment_id=assessment_id,db=db)
     
     #check for corresponding matching id
     if err:
         raise err
-    if not user_assessment_instance:
+    if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
     
     #retrieve assessment duration for setting cookies
-    duration = user_assessment_instance.assessment.duration_minutes
+    duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
-    '''
+
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
 
@@ -362,35 +363,54 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     
     #extract question(id,text type) and append to questions list
     question_list =[]
+    
     for question in questions_instance:
         question_list.append(Questions(
             question_id=question.id,
-            question_no=question.question_no,
-            question_text=question.question_text,
-            question_type=question.question_type, 
+            question_no=question.question_no or 0,
+            question_text=question.question_text ,
+            question_type=question.question_type ,
             options=question.answer.options
             ))
+        
+    user_assessment = UserAssessment(
+        user_id=user.id,
+        assessment_id=assessment_id,
+        score=0,
+        status="in_progress",
+        time_spent=0,
+        submission_date=None
+    )
 
-    response = {
+    db.add(user_assessment)
+    db.commit()
+    db.refresh(user_assessment)
+
+    resp = {
         "message": "Assessment started successfully",
         "status_code": 200,
         "data": question_list
     }
 
+    return resp, response
+
 @router.get("/session")
-async def get_session_details(response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
 
     #get assessment id from cookie
     assessment_id = response.cookies.get("assessment_session")
+
+    if not assessment_id:
+        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
+        return RedirectResponse(redirect_url, status_code=302)
+
     #get duration from cookie
     duration = response.cookies.get("assessment_duration")
+
+    if not duration:
+        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
+        return RedirectResponse(redirect_url, status_code=302)
     
-    #check for assessment id and duration
-    if not assessment_id or not duration:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments" #get frontend url from env
-        response.headers["Location"] = redirect_url
-        response.status_code = status.HTTP_302_FOUND
-        return response
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
     if error:
@@ -400,27 +420,27 @@ async def get_session_details(response:Response,db:Session = Depends(get_db), us
 
     answered_question_list = []
     unanswered_question_list = []
-    
-    for question in answered_question:
-        answered_question_list.append(Questions(
-            question_id=question.id,
-            question_no=question.question.question_no,
-            question_text=question.question.question_text,
-            question_type=question.question.question_type, 
-            options=question.answer.options,
-            user_selected_answer= question.selected_response,
-            ))
+    if answered_question != []:
+        for question in answered_question:
+            answered_question_list.append(Questions(
+                question_id=question.id,
+                question_no=question.question.question_no,
+                question_text=question.question.question_text,
+                question_type=question.question.question_type, 
+                options=question.answer.options,
+                user_selected_answer= question.selected_response,
+                ))
+    if unanswered_question != []:
+        for question in unanswered_question:
+            unanswered_question_list.append(Questions(
+                question_id=question.id,
+                question_no=question.question_no or 0,
+                question_text=question.question_text,
+                question_type=question.question_type,
+                options=question.answer.options
+                ))
         
-    for question in unanswered_question:
-        unanswered_question_list.append(Questions(
-            question_id=question.id,
-            question_no=question.question_no,
-            question_text=question.question_text,
-            question_type=question.question_type,
-            options=question.answer.options
-            ))
-        
-    response = {
+    resp = {
         "message": "Session details fetched successfully",
         "status_code": 200,
         "data": {
@@ -428,6 +448,9 @@ async def get_session_details(response:Response,db:Session = Depends(get_db), us
             "unanswered_questions": unanswered_question_list
         }
     }
+    return resp #@blac_dev take a look here too 
+
+    return response
 
 @router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
 async def get_assessment_result(
