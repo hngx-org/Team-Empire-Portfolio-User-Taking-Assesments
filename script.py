@@ -6,6 +6,7 @@ from datetime import timedelta
 
 questions_and_answer_list = [
   {
+    "question_no":1,
     "question_text": "Test Question 1",
     "question_type": "MCQ",
     "options": [
@@ -17,6 +18,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 1"
     },
   {
+    "question_no":2,
     "question_text": "Test Question 2",
     "question_type": "MCQ",
     "options": [
@@ -28,6 +30,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 2"
     },
   {
+    "question_no":3,
     "question_text": "Test Question 3",
     "question_type": "MCQ",
     "options": [
@@ -39,6 +42,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 3"
     },
   {
+    "question_no":4,
     "question_text": "Test Question 4",
     "question_type": "MCQ",
     "options": [
@@ -50,6 +54,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 4"
     },
   {
+    "question_no":5,
     "question_text": "Test Question 5",
     "question_type": "MCQ",
     "options": [
@@ -61,6 +66,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 1"
     },
   {
+    "question_no":6,
     "question_text": "Test Question 6",
     "question_type": "MCQ",
     "options": [
@@ -72,6 +78,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 2"
     },
   {
+    "question_no":7,
     "question_text": "Test Question 7",
     "question_type": "MCQ",
     "options": [
@@ -83,6 +90,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 3"
     },
   {
+    "question_no":8,
     "question_text": "Test Question 8",
     "question_type": "MCQ",
     "options": [
@@ -94,6 +102,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 4"
     },
   {
+    "question_no":9,
     "question_text": "Test Question 9",
     "question_type": "MCQ",
     "options": [
@@ -105,6 +114,7 @@ questions_and_answer_list = [
     "correct_answer": "Test Option 1"
     },
   {
+    "question_no":10,
     "question_text": "Test Question 10",
     "question_type": "MCQ",
     "options": [
@@ -122,7 +132,7 @@ def run():
 
     # create an assessment 
     assessment = Assessment(
-      skill_id=6, 
+      skill_id=9, 
       title = "Test Assessment",
       description = "Test Assessment Description",
       start_date = datetime.now(),
@@ -140,6 +150,7 @@ def run():
     for question_and_answer in questions_and_answer_list:
       question = Question(
         assessment_id=assessment.id,
+        question_no = question_and_answer["question_no"],
         question_text=question_and_answer["question_text"],
         question_type=question_and_answer["question_type"]
         
@@ -157,6 +168,9 @@ def run():
       db.add(answer)
       db.commit()
       db.refresh(answer)
+
+    print("Done writing in database")
+    print(f"assessment_id: {assessment.id}")
 
 
 if __name__ == "__main__":
