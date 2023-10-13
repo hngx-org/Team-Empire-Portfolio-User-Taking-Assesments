@@ -7,7 +7,7 @@ from sqlalchemy.types import ARRAY
 
 # Define ENUMs
 STATUS = ENUM('pending', 'complete', 'failed', name='status_enum')
-BADGES = ENUM('beginner', 'intermediate', 'expert', name='badges_enum')
+BADGES = ENUM('Beginner', 'Intermediate', 'Expert', name='badges_enum')
 
 
 class DATEBaseModel(Base):
@@ -18,10 +18,10 @@ class DATEBaseModel(Base):
     """
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, onupdate=text("now()"))
+    # created_at = Column(TIMESTAMP(timezone=True),
+    #                     nullable=False, server_default=text("now()"))
+    # updated_at = Column(TIMESTAMP(timezone=True),
+    #                     nullable=False, onupdate=text("now()"))
 
 
 class BaseModel(Base):
@@ -130,7 +130,7 @@ class UserAssessment(BaseModel):
                              nullable=False, server_default=text("now()"))
 
     user = relationship("User", back_populates="user_assessment")
-    assessment = relationship("Assessment", back_populates="user_assessment")
+    assessment = relationship("Assessment", back_populates="user_assessment", lazy="joined")
     user_response = relationship(
         "UserResponse", back_populates="user_assessment", lazy="joined")
 
@@ -180,7 +180,7 @@ class Assessment(BaseModel):
     skill = relationship("Skill", back_populates="assessment")
     assessment_category = relationship(
         "AssessmentCategory", back_populates="assessment")
-    user_badge = relationship("UserBadge", back_populates="assessment")
+    user_badge = relationship("UserBadge", back_populates="assessment", lazy="joined")
 
 
 class Skill(BaseModel):

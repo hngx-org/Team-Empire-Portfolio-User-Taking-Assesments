@@ -198,10 +198,41 @@ def run():
       db.commit()
       db.refresh(answer)
 
+  # create user response for the assessment
+    for question_and_answer in questions_and_answer_list:
+      user_response = UserResponse(
+        user_assessment_id=10,
+        question_id=question.id,
+        answer_id=answer.id,
+        selected_text=question_and_answer.get("correct_answer")
+      )
+      db.add(user_response)
+      db.commit()
+      db.refresh(user_response)
+
     print("Done writing in database")
     print(f"assessment_id: {assessment.id}")
 
+    # populate user response for an assessment
+    question = db.query(Question).filter(Question.assessment_id == 20).all()
+    question_id = [q.id for q in question]
+    answer_list = []
+    for i in question_id:
+      answer = db.query(Answer).filter(Answer.question_id == i).first()
+      answer_list.append(answer)
 
+    for i in answer_list:
+      user_response = UserResponse(
+        user_assessment_id=10,
+        question_id=i.question_id,
+        answer_id=i.id,
+        selected_response=questions_and_answer_list[0].get("correct_answer")
+      )
+      db.add(user_response)
+      db.commit()
+      db.refresh(user_response)
+
+    
 
 if __name__ == "__main__":
   run()

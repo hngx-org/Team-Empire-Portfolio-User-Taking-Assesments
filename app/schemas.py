@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Text, List, Optional
+from typing import Text, List, Optional, Union
 from uuid import UUID
 from enum import Enum
 
@@ -248,13 +248,14 @@ class UserAssessmentQuery(BaseModel):
 
 
 class userResponse(BaseModel):
-    question_id: int
-    user_answer_id: int
-    answer_text:str
+    question_id: int = None
+    user_answer_id: int = None
+    answer_text:str = None
 
 class UserAssessmentanswer(BaseModel):
     assessment_id: int
-    is_submitted: bool |None = False 
-    response: userResponse | None = None
+    is_submitted: bool = False 
+    response: Union[userResponse, None]= None
+    
 
 
