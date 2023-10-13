@@ -22,6 +22,7 @@ from app.services.user_assessment import get_user_by_id
 from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
 from starlette.responses import RedirectResponse
+from app.models import UserAssessment
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -366,11 +367,24 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     for question in questions_instance:
         question_list.append(Questions(
             question_id=question.id,
-            question_no=question.question_no,
+            question_no=question.question_no or 0,
             question_text=question.question_text ,
             question_type=question.question_type ,
             options=question.answer.options
             ))
+        
+    user_assessment = UserAssessment(
+        user_id=user.id,
+        assessment_id=assessment_id,
+        score=0,
+        status="in_progress",
+        time_spent=0,
+        submission_date=None
+    )
+
+    db.add(user_assessment)
+    db.commit()
+    db.refresh(user_assessment)
 
     resp = {
         "message": "Assessment started successfully",
@@ -378,23 +392,25 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         "data": question_list
     }
 
-    return resp
+    return resp, response
 
 @router.get("/session")
 async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
 
     #get assessment id from cookie
     assessment_id = response.cookies.get("assessment_session")
+
     if not assessment_id:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments"
+        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
         return RedirectResponse(redirect_url, status_code=302)
 
     #get duration from cookie
-    duration = response.cookies.get("assessment_duration") 
+    duration = response.cookies.get("assessment_duration")
+
     if not duration:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments"
+        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
         return RedirectResponse(redirect_url, status_code=302)
-        
+    
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
     if error:
