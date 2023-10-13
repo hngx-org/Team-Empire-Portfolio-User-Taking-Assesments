@@ -38,7 +38,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
                 answer_id=data.response.user_answer_id,
                 selected_response=data.response.answer_text
             )
-            
+
             db.add(data)
             db.commit()
             db.refresh(data)
@@ -103,7 +103,12 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
             db.commit()
             db.refresh(badge)
 
-            return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
+            return {
+                "message":"Session details saved successfully",
+                "status_code":status.HTTP_200_OK,
+                "score":score,
+                "badge":badge.badge_id
+            }
         
         except Exception as e:
             print(e)

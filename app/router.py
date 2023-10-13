@@ -11,16 +11,12 @@ from app.services.external import (
     )
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
-from app.schemas import StartAssessment, UserAssessmentQuery
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, AssessmentResults,SingleAssessmentResponse
+from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
+from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions,SingleAssessmentResponse
 from app.services.user_session import  save_session
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
-from app.response_schemas import AuthenticateUser
-from app.utils import is_valid_uuid
-from app.services.user_assessment import get_user_by_id
-from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
+from app.response_schemas import AuthenticateUser 
 from starlette.responses import RedirectResponse
 from app.models import UserAssessment
 
@@ -31,7 +27,7 @@ if settings.ENVIRONMENT == "development":
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("", response_model=UserAssessmentResponse)
+@router.get("" )
 async def get_all_user_assessments( db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
     """
 
@@ -158,40 +154,27 @@ async def get_all_user_assessments( db: Session = Depends(get_db), user: Authent
     status_code: 500
     }
     """
-    # # Check if user_id is a valid UUID
-    if not is_valid_uuid(user.id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user_id format. It should be a valid UUID."
-        )
     
-    # check if the user id exists in the database:
-    db_user = get_user_by_id(user_id=user.id, db=db)
-    if not db_user:
-        error_detail = {"error": "User not found", "user_id": user.id}
-        raise HTTPException(status_code=404, detail=error_detail)
-
-    if not Permission.check_permission(user.permissions, "assessments::view"):
+    if not Permission.check_permission(user.permissions, "assessment.read"):
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
 
-    assessments = get_user_assessments_from_db(user_id=user.id, db=db)
-    response_data = {}
-    if assessments:
-        response_data = {
-            "message": "Assessments fetched successfully",
-            "status_code": 200,
-            "assessments": assessments
-        }
-    else:
-        response_data = {
-            "message": "User has no assessments",
-            "status_code": 404,
-            "assessments": []
-        }
+    assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
+    
+    if err:
+        raise err
+    
+    if not assessments:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
+    
+    response = {
+        "message": "Assessments fetched successfully",
+        "status_code": 200,
+        "assessments": assessments
+    }
 
-    return response_data
+    return response
 
 
 @router.post("/start-assessment",)
@@ -518,7 +501,6 @@ async def get_assessment_result(
         "status": assessment_status,
         "answers": answers
     }
-    
 
     return response
 

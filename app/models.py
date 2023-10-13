@@ -456,4 +456,13 @@ class UserBadge(DATEBaseModel):
     badge = relationship("SkillBadge", back_populates="user_badge")
     assessment = relationship("Assessment", back_populates="user_badge")
 
-# Path: app/router.py
+
+class Track(BaseModel):
+    __tablename__ = "tracks"
+    track = Column(String, nullable=False)
+
+class UserTrack(BaseModel):
+    __tablename__ = "user_track"
+    user_id = Column(UUID, ForeignKey(
+    "user.id", ondelete="CASCADE"), nullable=False)
+    track_id = Column(Integer)

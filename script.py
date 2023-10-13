@@ -1,5 +1,5 @@
 from app.database import get_db_unyield
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, User
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, User, UserTrack, Track
 from sqlalchemy.orm import Session
 from datetime import datetime
 from datetime import timedelta
@@ -147,17 +147,6 @@ def run():
     db.commit()
     db.refresh(user_)
 
-    data = UserAssessment(
-      user_id=user_.id,
-      assessment_id=20,
-      score=0,
-      status="pending",
-      time_spent=20,
-      submission_date=datetime.now() + timedelta(days=2)
-    )
-    db.add(data)
-    db.commit()
-    db.refresh(data)
 
     # create an assessment 
     assessment = Assessment(
@@ -174,6 +163,18 @@ def run():
     db.add(assessment)
     db.commit()
     db.refresh(assessment)
+
+    data = UserAssessment(
+      user_id=user_.id,
+      assessment_id=20,
+      score=0,
+      status="pending",
+      time_spent=20,
+      submission_date=datetime.now() + timedelta(days=2)
+    )
+    db.add(data)
+    db.commit()
+    db.refresh(data)
 
     # create questions and answer for the assessment
     for question_and_answer in questions_and_answer_list:
@@ -210,8 +211,6 @@ def run():
       db.commit()
       db.refresh(user_response)
 
-    print("Done writing in database")
-    print(f"assessment_id: {assessment.id}")
 
     # populate user response for an assessment
     question = db.query(Question).filter(Question.assessment_id == 20).all()
@@ -231,8 +230,12 @@ def run():
       db.add(user_response)
       db.commit()
       db.refresh(user_response)
+    
 
     
+    print("Done writing in database")
+    print(f"assessment_id: {assessment.id}")
+    print(f"user_id: {user_.id}")
 
 if __name__ == "__main__":
   run()

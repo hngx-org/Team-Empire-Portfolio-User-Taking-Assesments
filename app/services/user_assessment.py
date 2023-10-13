@@ -1,8 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
-from app.models import UserAssessment
-from app.fake_db_response import UserAssessments as fake_db_user_assessments
-from app.fake_db_response import User
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, SkillBadge,UserBadge, Track, UserTrack, Skill
 
 
 def get_user_assessments_from_db(user_id: str,db=Session):
@@ -22,26 +20,33 @@ def get_user_assessments_from_db(user_id: str,db=Session):
         
     """
     # Replace when live data is available on DB
-    assessments = db.query(UserAssessment).filter(UserAssessment.user_id == user_id).all()
+    user_track = db.query(UserTrack).filter(UserTrack.user_id==user_id).first()
+    if not user_track:
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")
     
-    # assessments = [assessment for assessment in fake_db_user_assessments if assessment.get('user_id') == user_id]
-    return assessments
+    track = db.query(Track).filter(Track.id==user_track.track_id).first()
+    
+    if not track:
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")
+    
+    skill = db.query(Skill).filter(Skill.category_name==track.track).first()
 
-def get_user_by_id(user_id: str, db: Session):
-    """
-    Get user by user_id:
-        This function retrieves a user based on their user_id.
+    if not skill:
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No skill found for this user")
+    
+    assessments = db.query(Assessment).filter(Assessment.skill_id==skill.id).all()
 
-    Parameters:
-    - user_id : str
-        User ID of the user.
-    - db : Session
-        Database session.
+#######################################################################################################################
+#     assessments = (
+#     db.query(Assessment)
+#     .join(Skill, Assessment.skill_id == Skill.id)
+#     .join(Track, Skill.category_name == Track.track)
+#     .join(UserTrack, UserTrack.track_id == Track.id)
+#     .filter(UserTrack.user_id == user_id)
+#     .all()
+# )
 
-    Returns:
-    - user : User
-        User object if found, None if not found.
-    """
-    # Replace when live database
-    #user = db.query(User).filter(User.id == user_id).first()
-    return User
+    if not assessments:
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No assessments found for this user")
+    
+    return assessments, None
