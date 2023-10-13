@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Response
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -21,6 +21,7 @@ from app.utils import is_valid_uuid
 from app.services.user_assessment import get_user_by_id
 from app.schemas import StartAssessment, UserAssessmentQuery,UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions
+from starlette.responses import RedirectResponse
 
 if settings.ENVIRONMENT == "development":
     authenticate_user = fake_authenticate_user
@@ -381,19 +382,20 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     return response
 
 @router.get("/session")
-async def get_session_details(response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
 
     #get assessment id from cookie
     assessment_id = response.cookies.get("assessment_session")
+    if not assessment_id:
+        redirect_url = f"{settings.FRONTEND_URL}/assessments"
+        return RedirectResponse(redirect_url, status_code=302)
+
     #get duration from cookie
-    duration = response.cookies.get("assessment_duration")
-    
-    #check for assessment id and duration
-    if not assessment_id or not duration:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments" #get frontend url from env
-        response.headers["Location"] = redirect_url
-        response.status_code = status.HTTP_302_FOUND
-        return response
+    duration = response.cookies.get("assessment_duration") 
+    if not duration:
+        redirect_url = f"{settings.FRONTEND_URL}/assessments"
+        return RedirectResponse(redirect_url, status_code=302)
+        
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
     if error:
@@ -403,25 +405,25 @@ async def get_session_details(response:Response,db:Session = Depends(get_db), us
 
     answered_question_list = []
     unanswered_question_list = []
-    
-    for question in answered_question:
-        answered_question_list.append(Questions(
-            question_id=question.id,
-            question_no=question.question.question_no,
-            question_text=question.question.question_text,
-            question_type=question.question.question_type, 
-            options=question.answer.options,
-            user_selected_answer= question.selected_response,
-            ))
-        
-    for question in unanswered_question:
-        unanswered_question_list.append(Questions(
-            question_id=question.id,
-            question_no=question.question_no,
-            question_text=question.question_text,
-            question_type=question.question_type,
-            options=question.answer.options
-            ))
+    if answered_question != []:
+        for question in answered_question:
+            answered_question_list.append(Questions(
+                question_id=question.id,
+                question_no=question.question.question_no,
+                question_text=question.question.question_text,
+                question_type=question.question.question_type, 
+                options=question.answer.options,
+                user_selected_answer= question.selected_response,
+                ))
+    if unanswered_question != []:
+        for question in unanswered_question:
+            unanswered_question_list.append(Questions(
+                question_id=question.id,
+                question_no=question.question_no or 0,
+                question_text=question.question_text,
+                question_type=question.question_type,
+                options=question.answer.options
+                ))
         
     response = {
         "message": "Session details fetched successfully",
@@ -431,6 +433,8 @@ async def get_session_details(response:Response,db:Session = Depends(get_db), us
             "unanswered_questions": unanswered_question_list
         }
     }
+
+    return response
 
 @router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
 async def get_assessment_result(

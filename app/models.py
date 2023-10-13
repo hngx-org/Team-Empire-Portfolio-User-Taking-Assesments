@@ -80,18 +80,15 @@ class User(UUIDBaseModel):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    token = Column(String, nullable=True)
     password = Column(String, nullable=False)
     section_order = Column(Text, nullable=True)  # Explain section_order
     provider = Column(String, nullable=True)  # Explain provider
     profile_pic = Column(Text, nullable=True)
-    refresh_token = Column(String, nullable=True)
+    refresh_token = Column(String, default="")
     createdAt = Column(TIMESTAMP(timezone=True),
                        nullable=False, server_default=text("now()"))
-    updatedAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, onupdate=text("now()"))
 
-    user_assessment = relationship("UserAssessment", back_populates="user")
+    user_assessment = relationship("UserAssessment", back_populates="user", lazy="joined")
     user_badge = relationship("UserBadge", back_populates="user")
 
 
@@ -135,7 +132,7 @@ class UserAssessment(BaseModel):
     user = relationship("User", back_populates="user_assessment")
     assessment = relationship("Assessment", back_populates="user_assessment")
     user_response = relationship(
-        "UserResponse", back_populates="user_assessment")
+        "UserResponse", back_populates="user_assessment", lazy="joined")
 
 
 class Assessment(BaseModel):
@@ -380,7 +377,7 @@ class UserResponse(BaseModel):
     selected_response = Column(Text)
 
     user_assessment = relationship(
-        "UserAssessment", back_populates="user_response")
+        "UserAssessment", back_populates="user_response", lazy="joined")
     question = relationship("Question", back_populates="user_response")
     answer = relationship("Answer", back_populates="user_response")
 

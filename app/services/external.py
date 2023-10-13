@@ -62,7 +62,7 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     
     data = {
-        "id": "8b203a7b-3ebc-4f95-a451-d27c3e7a5252",
+        "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
@@ -190,16 +190,19 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     
     #query for any questions corresponding to the assessment_id
-    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment.assessment_id==assessment_id, UserResponse.user_assessment.user_id==user_id).all()
-    if not answered_questions:
+    user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id).first()
+    if not user_assement_instance:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     
-    for q in answered_questions:
-        for question in questions:
-            if q.question_id == question.id:
-                questions.remove(question)
+    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
+
+    if answered_questions != []:
+        for q in answered_questions:
+            for question in questions:
+                if q.question_id == question.id:
+                    questions.remove(question)
 
     return questions, answered_questions, None
         

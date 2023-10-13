@@ -1,8 +1,9 @@
 from app.database import get_db_unyield
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, User
 from sqlalchemy.orm import Session
 from datetime import datetime
 from datetime import timedelta
+from uuid import uuid4
 
 questions_and_answer_list = [
   {
@@ -119,6 +120,34 @@ questions_and_answer_list = [
 
 def run():
   with get_db_unyield() as db:
+    
+    user_ = User(
+      id = uuid4(),
+      email="test@gmail.com",
+      username="testin",
+      first_name="tetrst",
+      last_name="tesjhgt",
+      password="teskhjgt",
+      provider="google",
+      section_order="test",
+      createdAt=datetime.now(),
+      profile_pic="test",
+    )
+    db.add(user_)
+    db.commit()
+    db.refresh(user_)
+
+    data = UserAssessment(
+      user_id=user_.id,
+      assessment_id=20,
+      score=0,
+      status="pending",
+      time_spent=20,
+      submission_date=datetime.now() + timedelta(days=2)
+    )
+    db.add(data)
+    db.commit()
+    db.refresh(data)
 
     # create an assessment 
     assessment = Assessment(
@@ -157,6 +186,7 @@ def run():
       db.add(answer)
       db.commit()
       db.refresh(answer)
+
 
 
 if __name__ == "__main__":
