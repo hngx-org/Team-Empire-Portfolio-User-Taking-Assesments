@@ -455,7 +455,6 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
 @router.get("/{assessment_id}/result", status_code=200, response_model=AssessmentResults)
 async def get_assessment_result(
     assessment_id: int,
-    user_id: str,
     db: Session = Depends(get_db), 
     user:AuthenticateUser=Depends(authenticate_user)
 ):
@@ -504,6 +503,8 @@ async def get_assessment_result(
 
 
     """
+    user_id = user.id
+
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")

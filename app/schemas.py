@@ -4,7 +4,7 @@ from uuid import UUID
 from enum import Enum
 
 class AssessmentAnswers(BaseModel):
-    question_text : str
+    question_text : str 
     answer_text: str
     
 class STATUS(Enum):
@@ -254,7 +254,7 @@ class userResponse(BaseModel):
 
 class UserAssessmentanswer(BaseModel):
     assessment_id: int
-    is_submitted: bool |None = False 
-    response: userResponse | None = None
+    is_submitted: Optional[bool] = False 
+    response: Optional[userResponse] = None
 
 
