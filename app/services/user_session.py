@@ -33,25 +33,34 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
 
     if not data.is_submitted:
-
-        try:
-
-            data = UserResponse(
-                user_assessment_id=user_assessment_instance.id,
-                question_id=data.response.question_id,
-                answer_id=data.response.user_answer_id,
-                selected_response=data.response.answer_text
-            )
-
-            db.add(data)
+        UserResponse = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id,UserResponse.question_id==data.response.question_id).first()
+        if UserResponse:
+            UserResponse.answer_id = data.response.user_answer_id
+            UserResponse.selected_response = data.response.answer_text
             db.commit()
-            db.refresh(data)
-
+            db.refresh(UserResponse)
             return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
 
-        except Exception as e:
-            print(e)
-            return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to save session details")
+        else:
+
+            try:
+
+                data = UserResponse(
+                    user_assessment_id=user_assessment_instance.id,
+                    question_id=data.response.question_id,
+                    answer_id=data.response.user_answer_id,
+                    selected_response=data.response.answer_text
+                )
+
+                db.add(data)
+                db.commit()
+                db.refresh(data)
+
+                return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
+
+            except Exception as e:
+                print(e)
+                return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to save session details")
 
     else:
 

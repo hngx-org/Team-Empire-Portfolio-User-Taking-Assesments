@@ -7,7 +7,7 @@ from app.fake_db_response import UserAssessments,Questions #comment it after tes
 from app.response_schemas import AuthenticateUser
 from app.models import AssessmentCategory, UserResponse, Answer, Assessment
 
-def authenticate_user(token: str = Header(...)):
+def authenticate_user(permission: str,token: str ):
     """
     ***authenticate_user(SUBJECT TO CHANGE)***
     Takes the token from the header and makes a request to the authentication service to authenticate the user.
@@ -22,8 +22,10 @@ def authenticate_user(token: str = Header(...)):
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
     
     """
-    request = get(f"{settings.AUTH_SERVICE_URL}", headers={"Authorization": token}).json()
-
+    request = get(
+        f"{settings.AUTH_SERVICE_URL}",
+        headers={},
+        params={"token": token, "permission":permission}).json()
 
 
     if request.get("status") == 401:
@@ -32,10 +34,8 @@ def authenticate_user(token: str = Header(...)):
     if request.get("status") != 200:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
     
-    # Permission.check_permissions(request.get('user').get('permissions'))
     data = {
-        "id": request.get("user").get("user_id"),
-        "is_super_admin": False,
+        "id": request.get("user").get("id"),
         "permissions": request.get("user").get("permissions"),
     }
 
