@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException,status, Header
 from app.models import UserAssessment, Question
 from app.config import settings, Permission
-from requests import get
+from requests import post
 from app.fake_db_response import UserAssessments,Questions #comment it after testing and grading is done!
 from app.response_schemas import AuthenticateUser
 from app.models import AssessmentCategory, UserResponse, Answer, Assessment
@@ -22,10 +22,12 @@ def authenticate_user(permission: str,token: str ):
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
     
     """
-    request = get(
+
+    request = post(
         f"{settings.AUTH_SERVICE_URL}",
         headers={},
-        params={"token": token, "permission":permission}).json()
+        data={"token": token, "permission":permission}).json()
+
 
 
     if request.get("status") == 401:
@@ -34,12 +36,15 @@ def authenticate_user(permission: str,token: str ):
     if request.get("status") != 200:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
     
-    data = {
-        "id": request.get("user").get("id"),
-        "permissions": request.get("user").get("permissions"),
-    }
+    if Permission.check_permission(request.get("user").get("permissions"), permission):
 
-    return AuthenticateUser(**data)
+        data = {
+            "id": request.get("user").get("id"),
+            "permissions": request.get("user").get("permissions"),
+        }
+
+        return AuthenticateUser(**data)
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UNKNOWN PERMISSION")
 
 
 # create a function that has a fixed token for testing

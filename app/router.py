@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Request, Response,BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header,BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
-from app.services.external import check_for_assessment, fetch_questions
 from app.services.external import (
         check_for_assessment,
         fetch_questions,
@@ -20,15 +19,15 @@ from app.response_schemas import AuthenticateUser
 from starlette.responses import RedirectResponse
 from app.models import UserAssessment
 
-if settings.ENVIRONMENT == "development":
-    authenticate_user = fake_authenticate_user
+# if settings.ENVIRONMENT == "development":
+#     authenticate_user = fake_authenticate_user
 
 # Create a router object
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
 @router.get("" )
-async def get_all_user_assessments( db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)):
+async def get_all_user_assessments(token:str = Header(...), db: Session = Depends(get_db)):
     """
 
     Retrieve all assessments taken by a user.
@@ -154,7 +153,8 @@ async def get_all_user_assessments( db: Session = Depends(get_db), user: Authent
     status_code: 500
     }
     """
-
+    
+    user = authenticate_user(token=token, permission="assessment.read")
     if not Permission.check_permission(user.permissions, "assessment.read"):
 
         raise HTTPException(
@@ -178,7 +178,7 @@ async def get_all_user_assessments( db: Session = Depends(get_db), user: Authent
 
 
 @router.post("/start-assessment",)
-async def start_assessment(request:StartAssessment,response:Response,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def start_assessment( request:StartAssessment,response:Response, token:str = Header(...), db:Session = Depends(get_db),):
     '''
     Start an assessment for a user.
 
@@ -314,6 +314,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         status_code: 500
         }
     '''
+    user = authenticate_user(token=token, permission="assessment.update.own")
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
@@ -326,21 +327,24 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     #check for corresponding matching id
     if err:
         raise err
+    
     if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
 
     #retrieve assessment duration for setting cookies
     duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
+
     response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
-    questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db)
+    questions_instance,error = fetch_questions(assessment_id,db)
 
     #check for availability of questions under the assessment_id
     if error:
         raise error
+    
     if not questions_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
 
@@ -356,31 +360,36 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
             options=question.answer.options
             ))
 
-        
-    # user_assessment = UserAssessment(
-    #     user_id=user.id,
-    #     assessment_id=assessment_id,
-    #     score=0,
-    #     status="pending",
-    #     time_spent=0,
-    #     submission_date=None
-    # )
+    is_user_assessment = db.query(UserAssessment).filter(UserAssessment.user_id==user.id,UserAssessment.assessment_id==assessment_id).first()
 
-    # db.add(user_assessment)
-    # db.commit()
-    # db.refresh(user_assessment)
+    if not is_user_assessment:
+        user_assessment = UserAssessment(
+            user_id=user.id,
+            assessment_id=assessment_id,
+            score=0,
+            status="pending",
+            time_spent=0,
+            submission_date=None
+        )
 
-    resp = {
+        db.add(user_assessment)
+        db.commit()
+        db.refresh(user_assessment)
+
+    
+    return {
         "message": "Assessment started successfully",
         "status_code": 200,
-        "data": question_list
+        "data": {
+            "questions": question_list
+        }
     }
 
-    return resp
 
 @router.get("/session")
-async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
+async def get_session_details(response:Request,token:str = Header(...),db:Session = Depends(get_db),):
 
+    user = authenticate_user(token=token, permission="assessment.update.own")
     #get assessment id from cookie
     assessment_id = response.cookies.get("assessment_session")
 
@@ -439,8 +448,9 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
 @router.get("/{assessment_id}/result", status_code=200)
 async def get_assessment_result(
     assessment_id: int,
-    db: Session = Depends(get_db),
-    user:AuthenticateUser=Depends(authenticate_user)
+    token:str = Header(...),
+    db: Session = Depends(get_db), 
+   
 ):
     """
     Retrieve assessment results for a user.
@@ -487,7 +497,7 @@ async def get_assessment_result(
 
 
     """
-    user_id = user.id
+    user = authenticate_user(token=token, permission="assessment.read")
 
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
@@ -507,7 +517,7 @@ async def get_assessment_result(
 
 @router.post("/submit", )
 async def submit_assessment(
-    background_task:BackgroundTasks,response:UserAssessmentanswer, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)
+    background_task:BackgroundTasks,response:UserAssessmentanswer, db: Session = Depends(get_db),token:str = Header(...)
 ):
     """
     Submit an assessment for a user.
@@ -541,22 +551,22 @@ async def submit_assessment(
                 }
 
     """
-    if not Permission.check_permission(user.permissions, "assessment.update.own"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to submit assessments")
+    # user = authenticate_user(token=token, permission="assessment.update.own")
+    user = fake_authenticate_user()
 
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-    background_task.add_task(send_email(user.id,db=db))
+    # background_task.add_task(send_email, user.id, db)
     return save_session(response, user.id,db=db)
 
 
 
 
 @router.get("/{skill_id}")
-def get_assessment(skill_id:int, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
-
-    #edit below to match the right permission
+def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(get_db),):
+    
+    user = authenticate_user(token=token, permission="assessment.read")
+    #edit below to match the right permission 
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
@@ -573,7 +583,7 @@ def get_assessment(skill_id:int, db:Session = Depends(get_db), user:Authenticate
         "title": single_assessment_instance.title,
         "description" : single_assessment_instance.description,
         "duration_minutes" : single_assessment_instance.duration_minutes,
-        # "pass_score":single_assessment_instance.pass_score,
+
         "status": single_assessment_instance.status,
         "start_date": single_assessment_instance.start_date,
         "end_date": single_assessment_instance.end_date,

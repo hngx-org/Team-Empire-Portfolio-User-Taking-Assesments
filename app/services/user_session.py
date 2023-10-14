@@ -87,11 +87,17 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
             score = (score/len(questions))*100
 
             assessment_instance = db.query(Assessment).filter(Assessment.id==user_assessment_instance.assessment_id).first()
-            badges = db.query(SkillBadge).filter(SkillBadge.skill_id==assessment_instance.skill_id).all()
+            # badges = db.query(SkillBadge).filter(SkillBadge.skill_id==assessment_instance.skill_id).all()
 
             # update the userassessment table with the score and status
             user_assessment_instance.score = score
+            user_assessment_instance.status = "complete"
+            db.commit()
+            db.refresh(user_assessment_instance)
 
+            # assign badge
+            assign_badge(user_id, user_assessment_instance.assessment_id)
+            '''
             # check if each badge where the score falls within the range
             for badge in badges:
 
@@ -100,11 +106,6 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
                     user_assessment_instance.badge_id = badge.id
                     break
                 continue
-
-            user_assessment_instance.status = "complete"
-
-            db.commit()
-            db.refresh(user_assessment_instance)
 
             badge = UserBadge(
                 user_id=user_id,
@@ -115,12 +116,11 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
             db.add(badge)
             db.commit()
             db.refresh(badge)
-
+            '''
             return {
                 "message":"Session details saved successfully",
                 "status_code":status.HTTP_200_OK,
-                "score":score,
-                "badge":badge.badge_id
+                "score":score
             }
 
         except Exception as e:
@@ -136,7 +136,16 @@ def send_email(user_id,db:Session):
         "service":"Taking Assessment",
         "call_to_action_link":"https://example.com"
     }
-    response=requests.post(settings.MESSAGING_ENDPOINT,data=json.dumps(email_payload))
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
-    return response.status_code
+    response=requests.post(settings.MESSAGING,data=json.dumps(email_payload))
+    # if response.status_code != 200:
+    #     raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
+    # return response.status_code
+
+def assign_badge(user_id, assessment_id):
+
+    req = requests.post(
+        f"{settings.BADGE_SERVICE}",
+        headers={},
+        data={"user_id": user_id, "assessment_id":assessment_id}).json()
+    
+    

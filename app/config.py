@@ -23,10 +23,13 @@ class Settings:
     DB_HOST = config("DB_HOST")
     DB_PORT = config("DB_PORT")
     LOCAL = config("LOCAL", cast=bool, default=False)
-    AUTH_SERVICE_URL = config("AUTH_SERVICE_URL")
-    MESSAGING_ENDPOINT=config("MESSAGING_ENDPOINT")
+    AUTH_SERVICE = config("AUTH_SERVICE")
+    MESSAGING=config("MESSAGING")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
     FRONTEND_URL = "https://google.com"
+    BADGE_SERVICE= config("BADGE_SERVICE")
+
+
 
 # a class that takes in a list of permissions and checks if a permission is present in the list
 class Permissions():
