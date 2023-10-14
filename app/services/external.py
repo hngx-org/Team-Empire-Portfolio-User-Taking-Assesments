@@ -24,7 +24,7 @@ def authenticate_user(permission: str,token: str ):
     """
 
     request = post(
-        f"{settings.AUTH_SERVICE_URL}",
+        f"{settings.AUTH_SERVICE}",
         headers={},
         data={"token": token, "permission":permission}).json()
 
