@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Request, Response
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response,BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -6,17 +6,17 @@ from app.services.external import check_for_assessment, fetch_questions
 from app.services.external import (
         check_for_assessment,
         fetch_questions,
-        fetch_single_assessment, 
+        fetch_single_assessment,
         fetch_answered_and_unanswered_questions
     )
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results
 from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions,SingleAssessmentResponse
-from app.services.user_session import  save_session
+from app.services.user_session import  save_session,send_email
 from app.config import Permission, settings
 from app.services.external import fake_authenticate_user, authenticate_user
-from app.response_schemas import AuthenticateUser 
+from app.response_schemas import AuthenticateUser
 from starlette.responses import RedirectResponse
 from app.models import UserAssessment
 
@@ -154,20 +154,20 @@ async def get_all_user_assessments( db: Session = Depends(get_db), user: Authent
     status_code: 500
     }
     """
-    
+
     if not Permission.check_permission(user.permissions, "assessment.read"):
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
 
     assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
-    
+
     if err:
         raise err
-    
+
     if not assessments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
-    
+
     response = {
         "message": "Assessments fetched successfully",
         "status_code": 200,
@@ -186,7 +186,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     Request_body: User ID, Assessment ID
 
     Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
             - questions: List of questions for the assessment
@@ -280,35 +280,35 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         }
 
     Error response:
-    
+
                     {
                     "message": "Assessment already started",
                     "status_code": 400
                     }
 
     Error response:
-    
+
                         {
                         "message": "Assessment does not exist",
                         "status_code": 404
                         }
 
     Error response:
-        
+
                             {
                             "message": "User does not exist",
                             "status_code": 404
                             }
 
     Error response:
-            
+
                                     {
                                     "message": "User ID is required",
                                     "status_code": 400
                                     }
 
     Error response:
-        
+
         {
         message: "failed to start assessment",
         status_code: 500
@@ -317,18 +317,18 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
-    
+
     assessment_id = request.assessment_id
 
     #check for assessment to get duration and set cookie
     assessment_instance,err = check_for_assessment(assessment_id=assessment_id,db=db)
-    
+
     #check for corresponding matching id
     if err:
         raise err
     if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-    
+
     #retrieve assessment duration for setting cookies
     duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
@@ -343,10 +343,10 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         raise error
     if not questions_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
-    
+
     #extract question(id,text type) and append to questions list
     question_list =[]
-    
+
     for question in questions_instance:
         question_list.append(Questions(
             question_id=question.id,
@@ -355,7 +355,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
             question_type=question.question_type ,
             options=question.answer.options
             ))
-        
+
     user_assessment = UserAssessment(
         user_id=user.id,
         assessment_id=assessment_id,
@@ -393,7 +393,7 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
     if not duration:
         redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
         return RedirectResponse(redirect_url, status_code=302)
-    
+
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
     if error:
@@ -409,7 +409,7 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
                 question_id=question.id,
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
-                question_type=question.question.question_type, 
+                question_type=question.question.question_type,
                 options=question.answer.options,
                 user_selected_answer= question.selected_response,
                 ))
@@ -422,7 +422,7 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
                 question_type=question.question_type,
                 options=question.answer.options
                 ))
-        
+
     resp = {
         "message": "Session details fetched successfully",
         "status_code": 200,
@@ -431,14 +431,14 @@ async def get_session_details(response:Request,db:Session = Depends(get_db), use
             "unanswered_questions": unanswered_question_list
         }
     }
-    return resp #@blac_dev take a look here too 
+    return resp #@blac_dev take a look here too
 
     return response
 
 @router.get("/{assessment_id}/result", status_code=200)
 async def get_assessment_result(
     assessment_id: int,
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
     user:AuthenticateUser=Depends(authenticate_user)
 ):
     """
@@ -454,9 +454,9 @@ async def get_assessment_result(
         - answers: List of answers submitted by the user
 
     Error Response:
-    
+
             - message: Message indicating the status of the request
-            - status_code: Status code of the request   
+            - status_code: Status code of the request
 
     Example request:
 
@@ -478,10 +478,10 @@ async def get_assessment_result(
                 }
 
     Error response:
-    
+
                     {
                     "message": "User does not exist",
-                    "status_code": 404  
+                    "status_code": 404
                     }
 
 
@@ -491,9 +491,9 @@ async def get_assessment_result(
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
-    
+
     score, assessment_status, answers = get_assessment_results(user_id=user.id, assessment_id=assessment_id, db=db)
-    
+
     response = {
         "score": score,
         "user_id": user.id,
@@ -506,7 +506,7 @@ async def get_assessment_result(
 
 @router.post("/submit", )
 async def submit_assessment(
-    response:UserAssessmentanswer, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)
+    background_task:BackgroundTasks,response:UserAssessmentanswer, db: Session = Depends(get_db), user: AuthenticateUser = Depends(authenticate_user)
 ):
     """
     Submit an assessment for a user.
@@ -515,7 +515,7 @@ async def submit_assessment(
     Request_body: User ID, Assessment ID, Answers
 
     Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
 
@@ -533,7 +533,7 @@ async def submit_assessment(
                         {\"question_id\":8,\"user_answer_id\":8},{\"question_id\":9,\"user_answer_id\":9},{\"question_id\":10,\"user_answer_id\":10}]}"
 
     Example response:
-    
+
                 {
                 "message": "Assessment submitted successfully",
                 "status_code": 200
@@ -543,9 +543,10 @@ async def submit_assessment(
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to submit assessments")
-    
+
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
+    background_task.add_task(send_email(user.id,db=db))
     return save_session(response, user.id,db=db)
 
 
@@ -553,8 +554,8 @@ async def submit_assessment(
 
 @router.get("/{skill_id}")
 def get_assessment(skill_id:int, db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
-    
-    #edit below to match the right permission 
+
+    #edit below to match the right permission
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")

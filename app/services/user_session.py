@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, SkillBadge,UserBadge
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, SkillBadge,UserBadge,User
 from app.schemas import UserAssessmentanswer
 from fastapi import HTTPException, status
 from app.response_schemas import Response
+import requests
+import json
+from app.config import settings
+
 
 
 # save session details
@@ -27,7 +31,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
 
     if not user_assessment_instance:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
-    
+
     if not data.is_submitted:
 
         try:
@@ -44,13 +48,13 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
             db.refresh(data)
 
             return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
-        
+
         except Exception as e:
             print(e)
             return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to save session details")
-        
-    else: 
-  
+
+    else:
+
         try:
 
             # fetch all userresponse tied to the userassessment id
@@ -109,7 +113,21 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
                 "score":score,
                 "badge":badge.badge_id
             }
-        
+
         except Exception as e:
             print(e)
             return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to calculate score")
+
+def send_email(user_id,db:Session):
+    # get user email and name
+    user=db.query(User).filter(User.id==user_id).first()
+    email_payload={
+        "recipient":user.email,
+        "name":f'{user.first_name} {user.last_name}',
+        "service":"Taking Assessment",
+        "call_to_action_link":"https://example.com"
+    }
+    response=requests.post(settings.MESSAGING_ENDPOINT,data=json.dumps(email_payload))
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
+    return response.status_code
