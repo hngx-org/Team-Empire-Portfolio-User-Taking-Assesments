@@ -21,10 +21,12 @@ def get_user_assessments_from_db(user_id: str,db=Session):
     """
     # Replace when live data is available on DB
     user_track = db.query(UserTrack).filter(UserTrack.user_id==user_id).first()
+    # print(user_track.track_id)
     if not user_track:
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")
     
     track = db.query(Track).filter(Track.id==user_track.track_id).first()
+    print(track.track)
     
     if not track:
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")

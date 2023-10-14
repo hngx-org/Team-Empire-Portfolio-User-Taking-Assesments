@@ -33,12 +33,12 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
 
     if not data.is_submitted:
-        UserResponse = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id,UserResponse.question_id==data.response.question_id).first()
-        if UserResponse:
-            UserResponse.answer_id = data.response.user_answer_id
-            UserResponse.selected_response = data.response.answer_text
+        User_Response = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id,UserResponse.question_id==data.response.question_id).first()
+        if User_Response:
+            User_Response.answer_id = data.response.user_answer_id
+            User_Response.selected_response = data.response.answer_text
             db.commit()
-            db.refresh(UserResponse)
+            db.refresh(User_Response)
             return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
 
         else:

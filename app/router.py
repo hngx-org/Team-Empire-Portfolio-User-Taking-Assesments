@@ -155,6 +155,7 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     """
     
     user = authenticate_user(token=token, permission="assessment.read")
+    # user = fake_authenticate_user()
     if not Permission.check_permission(user.permissions, "assessment.read"):
 
         raise HTTPException(
@@ -315,6 +316,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
         }
     '''
     user = authenticate_user(token=token, permission="assessment.update.own")
+    # user = fake_authenticate_user()
     if not Permission.check_permission(user.permissions, "assessment.update.own"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
@@ -390,6 +392,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
 async def get_session_details(response:Request,token:str = Header(...),db:Session = Depends(get_db),):
 
     user = authenticate_user(token=token, permission="assessment.update.own")
+    # user = fake_authenticate_user()
     #get assessment id from cookie
     assessment_id = response.cookies.get("assessment_session")
 
@@ -551,8 +554,8 @@ async def submit_assessment(
                 }
 
     """
-    # user = authenticate_user(token=token, permission="assessment.update.own")
-    user = fake_authenticate_user()
+    user = authenticate_user(token=token, permission="assessment.update.own")
+    # user = fake_authenticate_user()
 
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
