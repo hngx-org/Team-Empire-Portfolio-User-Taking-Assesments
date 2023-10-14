@@ -356,18 +356,19 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
             options=question.answer.options
             ))
 
-    user_assessment = UserAssessment(
-        user_id=user.id,
-        assessment_id=assessment_id,
-        score=0,
-        status="pending",
-        time_spent=0,
-        submission_date=None
-    )
+        
+    # user_assessment = UserAssessment(
+    #     user_id=user.id,
+    #     assessment_id=assessment_id,
+    #     score=0,
+    #     status="pending",
+    #     time_spent=0,
+    #     submission_date=None
+    # )
 
-    db.add(user_assessment)
-    db.commit()
-    db.refresh(user_assessment)
+    # db.add(user_assessment)
+    # db.commit()
+    # db.refresh(user_assessment)
 
     resp = {
         "message": "Assessment started successfully",
@@ -375,7 +376,7 @@ async def start_assessment(request:StartAssessment,response:Response,db:Session 
         "data": question_list
     }
 
-    return resp, response
+    return resp
 
 @router.get("/session")
 async def get_session_details(response:Request,db:Session = Depends(get_db), user:AuthenticateUser=Depends(authenticate_user)):
