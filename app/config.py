@@ -14,7 +14,7 @@ class Settings:
     - DB_PASSWORD: This is the password of the database
     - DB_USERNAME: This is the username of the database
     - DB_NAME: This is the name of the database
-    
+
     """
     DB_TYPE = config("DB_TYPE")
     DB_NAME = config("DB_NAME")
@@ -24,6 +24,7 @@ class Settings:
     DB_PORT = config("DB_PORT")
     LOCAL = config("LOCAL", cast=bool, default=False)
     AUTH_SERVICE_URL = config("AUTH_SERVICE_URL")
+    MESSAGING_ENDPOINT=config("MESSAGING_ENDPOINT")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
     FRONTEND_URL = "https://google.com"
 
@@ -45,7 +46,7 @@ class Permissions():
         self.permissions = permissions
 
     def check_permission(self, permission_list, permission):
-        
+
         """
         Check permission:
             This method checks if a permission is present in the list of permissions
@@ -57,11 +58,11 @@ class Permissions():
         - bool: This is True if the permission is present in the list of permissions else False
 
         """
-        
+
         if permission in permission_list:
             return True
         return False
-    
+
     def check_permissions(self, permission_list):
         """
         Check permissions:
@@ -75,7 +76,7 @@ class Permissions():
 
         """
         return all(self.check_permission(permission_list, permission) for permission in self.permissions)
-  
+
 
 settings = Settings()
 Permission = Permissions(permissions=["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"])
