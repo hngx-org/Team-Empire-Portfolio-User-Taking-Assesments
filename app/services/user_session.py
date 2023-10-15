@@ -6,11 +6,11 @@ from app.response_schemas import Response
 import requests
 import json
 from app.config import settings
-
+from fastapi import BackgroundTasks
 
 
 # save session details
-def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
+def save_session(data: UserAssessmentanswer, user_id: int, db:Session, background_task: BackgroundTasks):
 
     """
     Save session details:
@@ -97,6 +97,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session):
 
             # assign badge
             assign_badge(user_id, user_assessment_instance.assessment_id)
+            background_task.add_task(send_email, user_id, db)
             '''
             # check if each badge where the score falls within the range
             for badge in badges:

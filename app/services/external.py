@@ -101,7 +101,7 @@ def check_for_assessment(assessment_id:str,db:Session):
 
 
 
-def fetch_questions(assessment_id:str,db:Session):
+def fetch_questions(assessment_id:str, count:bool,db:Session):
     """
         Fetch questions:
             This function fetches the questions under the assessment_id
@@ -119,13 +119,21 @@ def fetch_questions(assessment_id:str,db:Session):
             returns the list of questions under the assessment_id
     """
     # #query for any questions corresponding to the assessment_id and do a join with the answers table
-    questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
+    questions = db.query(Question).filter(Question.assessment_id==assessment_id)
+
+    if count:
+        return questions.count(), None
+    
+    questions = questions.all()
+
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     return questions, None
     
+
+
 def fetch_single_assessment(skill_id:str,db:Session):
     """
         Get  single assessment :

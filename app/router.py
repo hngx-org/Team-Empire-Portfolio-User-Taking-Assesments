@@ -14,7 +14,7 @@ from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentansw
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions,SingleAssessmentResponse
 from app.services.user_session import  save_session,send_email
 from app.config import Permission, settings
-from app.services.external import fake_authenticate_user, authenticate_user
+from app.services.external import fake_authenticate_user, authenticate_user, fetch_questions
 from app.response_schemas import AuthenticateUser
 from starlette.responses import RedirectResponse
 from app.models import UserAssessment
@@ -341,7 +341,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
-    questions_instance,error = fetch_questions(assessment_id,db)
+    questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db, count=False)
 
     #check for availability of questions under the assessment_id
     if error:
@@ -559,8 +559,8 @@ async def submit_assessment(
 
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-    # background_task.add_task(send_email, user.id, db)
-    return save_session(response, user.id,db=db)
+    
+    return save_session(response, user.id,db=db, background_task=background_task)
 
 
 
@@ -575,18 +575,28 @@ def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(ge
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
 
     single_assessment_instance,error = fetch_single_assessment(skill_id=skill_id,db=db)
+
     #check for corresponding errors
     if error:
         raise error
     if not single_assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
+    
+    question_count, err = fetch_questions(assessment_id=single_assessment_instance.id,db=db, count=True)
+
+    if err:
+        raise err
+    
+    if not question_count:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
+    
     response = {
         "assessment_id":single_assessment_instance.id,
         "skill_id": skill_id,
         "title": single_assessment_instance.title,
         "description" : single_assessment_instance.description,
         "duration_minutes" : single_assessment_instance.duration_minutes,
-
+        "question_count": question_count,
         "status": single_assessment_instance.status,
         "start_date": single_assessment_instance.start_date,
         "end_date": single_assessment_instance.end_date,
