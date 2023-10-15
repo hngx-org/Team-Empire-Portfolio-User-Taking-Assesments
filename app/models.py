@@ -89,7 +89,7 @@ class User(UUIDBaseModel):
                        nullable=False, server_default=text("now()"))
 
     user_assessment = relationship("UserAssessment", back_populates="user", lazy="joined")
-    # user_badge = relationship("UserBadge", back_populates="user")
+    user_badge = relationship("UserBadge", back_populates="user")
 
 
 class UserAssessment(BaseModel):
@@ -133,6 +133,7 @@ class UserAssessment(BaseModel):
     assessment = relationship("Assessment", back_populates="user_assessment", lazy="joined")
     user_response = relationship(
         "UserResponse", back_populates="user_assessment", lazy="joined")
+    user_badge = relationship("UserBadge", back_populates="assessment", lazy="joined")
 
 
 class Assessment(BaseModel):
@@ -180,7 +181,7 @@ class Assessment(BaseModel):
     skill = relationship("Skill", back_populates="assessment")
     assessment_category = relationship(
         "AssessmentCategory", back_populates="assessment")
-    # user_badge = relationship("UserBadge", back_populates="assessment", lazy="joined")
+
 
 
 class Skill(BaseModel):
@@ -222,7 +223,7 @@ class Skill(BaseModel):
     child_skill = relationship(
         "Skill", remote_side=[parent_skill_id], back_populates="parent_skill"
     )
-    # skill_badge = relationship("SkillBadge", back_populates="skill")
+    skill_badge = relationship("SkillBadge", back_populates="skill")
     assessment_category = relationship(
         "AssessmentCategory", back_populates="skill")
 
@@ -298,48 +299,48 @@ class Answer(BaseModel):
     user_response = relationship("UserResponse", back_populates="answer")
 
 
-# class SkillBadge(DATEBaseModel):
-#     """
-#     SkillBadge Table
+class SkillBadge(DATEBaseModel):
+    """
+    SkillBadge Table
 
-#     It is a model for skill_badge table in database.
+    It is a model for skill_badge table in database.
 
-#     Columns:
+    Columns:
 
-#     - skill_id: foreign key to skill table.
-#     - name: name of the badge.
-#     - badge_image: image of the badge.
-#     - min_score: minimum score to get the badge.
-#     - max_score: maximum score to get the badge.
+    - skill_id: foreign key to skill table.
+    - name: name of the badge.
+    - badge_image: image of the badge.
+    - min_score: minimum score to get the badge.
+    - max_score: maximum score to get the badge.
 
-#     Inherited columns:
-#     - id: primary key of the table.
-#     - created_at: created date of the record.
-#     - updated_at: updated date of the record.
+    Inherited columns:
+    - id: primary key of the table.
+    - created_at: created date of the record.
+    - updated_at: updated date of the record.
 
-#     Relationships:
+    Relationships:
 
-#     - Skill: one-to-many
-#     - UserBadge: one-to-many
+    - Skill: one-to-many
+    - UserBadge: one-to-many
 
-#     """
-#     __tablename__ = "skill_badge"
+    """
+    __tablename__ = "skill_badge"
 
-#     skill_id = Column(Integer, ForeignKey(
-#         "skill.id", ondelete="CASCADE"), nullable=False)
-#     name = Column(BADGES, nullable=False)
-#     badge_image = Column(Text, nullable=False)
-#     min_score = Column(Float, nullable=False)
-#     max_score = Column(Float, nullable=False)
-#     createdAt = Column(
-#         TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
-#     )
-#     updatedAt = Column(
-#         TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()")
-#     )
+    skill_id = Column(Integer, ForeignKey(
+        "skill.id", ondelete="CASCADE"), nullable=False)
+    name = Column(BADGES, nullable=False)
+    badge_image = Column(Text, nullable=False)
+    min_score = Column(Float, nullable=False)
+    max_score = Column(Float, nullable=False)
+    createdAt = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
+    )
+    updatedAt = Column(
+        TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()")
+    )
 
-#     skill = relationship("Skill", back_populates="skill_badge")
-#     user_badge = relationship("UserBadge", back_populates="badge")
+    skill = relationship("Skill", back_populates="skill_badge")
+    user_badge = relationship("UserBadge", back_populates="badge")
 
 
 class UserResponse(BaseModel):
@@ -416,45 +417,45 @@ class AssessmentCategory(BaseModel):
     skill = relationship("Skill", back_populates="assessment_category")
 
 
-# class UserBadge(DATEBaseModel):
-#     """
-#     UserBadge Table
+class UserBadge(DATEBaseModel):
+    """
+    UserBadge Table
 
-#     It is a model for user_badge table in database.
+    It is a model for user_badge table in database.
 
-#     Columns:
+    Columns:
 
-#     - user_id: foreign key to user table.
-#     - badge_id: foreign key to skill_badge table.
-#     - assessment_id: foreign key to assessment table.
+    - user_id: foreign key to user table.
+    - badge_id: foreign key to skill_badge table.
+    - assessment_id: foreign key to assessment table.
 
-#     Inherited columns:
-#     - id: primary key of the table.
-#     - created_at: created date of the record.
-#     - updated_at: updated date of the record.
+    Inherited columns:
+    - id: primary key of the table.
+    - created_at: created date of the record.
+    - updated_at: updated date of the record.
 
-#     It has the following relationships:
+    It has the following relationships:
 
-#     - User: one-to-many
-#     - SkillBadge: one-to-many
-#     - Assessment: one-to-many
-#     """
-#     __tablename__ = "user_badge"
+    - User: one-to-many
+    - SkillBadge: one-to-many
+    - Assessment: one-to-many
+    """
+    __tablename__ = "user_badge"
 
-#     user_id = Column(UUID, ForeignKey(
-#         "user.id", ondelete="CASCADE"), nullable=False)
-#     badge_id = Column(Integer, ForeignKey(
-#         "skill_badge.id", ondelete="CASCADE"), nullable=False)
-#     assessment_id = Column(Integer, ForeignKey(
-#         "assessment.id", ondelete="CASCADE"), nullable=False)
-#     createdAt = Column(TIMESTAMP(timezone=True),
-#                        nullable=False, server_default=text("now()"))
-#     updatedAt = Column(TIMESTAMP(timezone=True),
-#                        nullable=False, onupdate=text("now()"))
+    user_id = Column(UUID, ForeignKey(
+        "user.id", ondelete="CASCADE"), nullable=False)
+    badge_id = Column(Integer, ForeignKey(
+        "skill_badge.id", ondelete="CASCADE"), nullable=False)
+    user_assessment_id = Column(Integer, ForeignKey(
+        "user_assessment.id", ondelete="CASCADE"), nullable=False)
+    createdAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, server_default=text("now()"))
+    updatedAt = Column(TIMESTAMP(timezone=True),
+                       nullable=False, onupdate=text("now()"))
 
-#     user = relationship("User", back_populates="user_badge")
-#     badge = relationship("SkillBadge", back_populates="user_badge")
-    # assessment = relationship("Assessment", back_populates="user_badge")
+    user = relationship("User", back_populates="user_badge")
+    badge = relationship("SkillBadge", back_populates="user_badge")
+    assessment = relationship("UserAssessment", back_populates="user_badge")
 
 
 class Track(BaseModel):
