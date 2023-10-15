@@ -466,3 +466,4 @@ class UserTrack(BaseModel):
     user_id = Column(UUID, ForeignKey(
     "user.id", ondelete="CASCADE"), nullable=False)
     track_id = Column(Integer)
+    
