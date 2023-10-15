@@ -14,13 +14,13 @@ class DATEBaseModel(Base):
     """
     DATEBaseModel Table
 
-    It is an abstract model for tables that have created_at and updated_at columns.
+    It is an abstract model for tables that have createdAt and updatedAt columns.
     """
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(TIMESTAMP(timezone=True),
+    createdAt = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text("now()"))
-    updated_at = Column(TIMESTAMP(timezone=True),
+    updatedAt = Column(TIMESTAMP(timezone=True),
                         nullable=False, onupdate=text("now()"))
 
 
@@ -28,7 +28,7 @@ class BaseModel(Base):
     """
     BaseModel Table
 
-    It is an abstract model for tables that have created_at, updated_at and id columns.
+    It is an abstract model for tables that have createdAt, updatedAt and id columns.
     """
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
@@ -38,7 +38,7 @@ class UUIDBaseModel(Base):
     """
     UUIDBaseModel Table
 
-    It is an abstract model for tables that have created_at, updated_at and id columns.
+    It is an abstract model for tables that have createdAt, updatedAt and id columns.
     """
     __abstract__ = True
     id = Column(UUID(as_uuid=True), primary_key=True,
@@ -65,8 +65,8 @@ class User(UUIDBaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -110,8 +110,8 @@ class UserAssessment(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -157,8 +157,8 @@ class Assessment(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -202,8 +202,8 @@ class Skill(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -246,8 +246,8 @@ class Question(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -284,8 +284,8 @@ class Answer(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -319,8 +319,8 @@ class SkillBadge(DATEBaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -336,12 +336,6 @@ class SkillBadge(DATEBaseModel):
     badge_image = Column(Text, nullable=False)
     min_score = Column(Float, nullable=False)
     max_score = Column(Float, nullable=False)
-    createdAt = Column(
-        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
-    )
-    updatedAt = Column(
-        TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()")
-    )
 
     skill = relationship("Skill", back_populates="skill_badge")
     user_badge = relationship("UserBadge", back_populates="badge")
@@ -361,8 +355,8 @@ class UserResponse(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -400,8 +394,8 @@ class AssessmentCategory(BaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     Relationships:
 
@@ -435,8 +429,8 @@ class UserBadge(DATEBaseModel):
 
     Inherited columns:
     - id: primary key of the table.
-    - created_at: created date of the record.
-    - updated_at: updated date of the record.
+    - createdAt: created date of the record.
+    - updatedAt: updated date of the record.
 
     It has the following relationships:
 
@@ -452,10 +446,6 @@ class UserBadge(DATEBaseModel):
         "skill_badge.id", ondelete="CASCADE"), nullable=False)
     assessment_id = Column(Integer, ForeignKey(
         "assessment.id", ondelete="CASCADE"), nullable=False)
-    createdAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, server_default=text("now()"))
-    updatedAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, onupdate=text("now()"))
 
     user = relationship("User", back_populates="user_badge")
     badge = relationship("SkillBadge", back_populates="user_badge")
