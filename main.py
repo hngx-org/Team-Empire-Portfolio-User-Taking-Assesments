@@ -28,6 +28,8 @@ app.include_router(v1)
 if settings.LOCAL:
     create_database()
 
-
+@app.get("/")
+async def root():
+    return {"msg": "Hello World"}
 if __name__ == "__main__":
     uvicorn.run(app="main:app", port=8000, reload=True)
