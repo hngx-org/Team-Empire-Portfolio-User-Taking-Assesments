@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException,status
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, SkillBadge,UserBadge, Track, UserTrack, Skill
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, Track, UserTrack, Skill
 
 
 def get_user_assessments_from_db(user_id: str,db=Session):

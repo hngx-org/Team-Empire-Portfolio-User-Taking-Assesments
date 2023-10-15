@@ -156,10 +156,6 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     
     user = authenticate_user(token=token, permission="assessment.read")
     # user = fake_authenticate_user()
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view assessments")
 
     assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
 
@@ -317,9 +313,6 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     '''
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
-    if not Permission.check_permission(user.permissions, "assessment.update.own"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
 
     assessment_id = request.assessment_id
 
@@ -409,14 +402,18 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
 
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
+
     if error:
         raise error
+    
     if not unanswered_question:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Assessment already completed")
 
     answered_question_list = []
     unanswered_question_list = []
+
     if answered_question != []:
+
         for question in answered_question:
             answered_question_list.append(Questions(
                 question_id=question.id,
@@ -426,7 +423,9 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 options=question.answer.options,
                 user_selected_answer= question.selected_response,
                 ))
+            
     if unanswered_question != []:
+
         for question in unanswered_question:
             unanswered_question_list.append(Questions(
                 question_id=question.id,
@@ -436,7 +435,7 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 options=question.answer.options
                 ))
 
-    resp = {
+    return {
         "message": "Session details fetched successfully",
         "status_code": 200,
         "data": {
@@ -444,9 +443,6 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
             "unanswered_questions": unanswered_question_list
         }
     }
-    return resp #@blac_dev take a look here too
-
-    return response
 
 @router.get("/{assessment_id}/result", status_code=200)
 async def get_assessment_result(
@@ -501,10 +497,6 @@ async def get_assessment_result(
 
     """
     user = authenticate_user(token=token, permission="assessment.read")
-
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to view results")
 
     score, assessment_status, answers = get_assessment_results(user_id=user.id, assessment_id=assessment_id, db=db)
 

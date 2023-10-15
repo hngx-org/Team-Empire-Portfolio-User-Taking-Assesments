@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, SkillBadge,UserBadge,User
+from app.models import UserAssessment, Question, UserResponse, Answer, Assessment,User
 from app.schemas import UserAssessmentanswer
 from fastapi import HTTPException, status
 from app.response_schemas import Response
