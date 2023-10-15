@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from typing import Text, List, Optional
+from typing import Text, List, Optional, Union
 from uuid import UUID
 from enum import Enum
 
 class AssessmentAnswers(BaseModel):
-    question_text : str
+    question_text : str 
     answer_text: str
     
 class STATUS(Enum):
@@ -240,8 +240,22 @@ class Answer(AnswerBase):
 
 # Query fields
 class StartAssessment(BaseModel):
-    user_id: str
+    #user_id: str #the user id will henceforth be extracted from header token
     assessment_id:int
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
+
+
+class userResponse(BaseModel):
+    question_id: int = None
+    user_answer_id: int = None
+    answer_text:str = None
+
+class UserAssessmentanswer(BaseModel):
+    assessment_id: int
+    is_submitted: bool = False 
+    response: Union[userResponse, None]= None
+    
+
+
