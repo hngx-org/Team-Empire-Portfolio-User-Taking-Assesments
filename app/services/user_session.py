@@ -27,7 +27,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
         status code of the response
 
     """
-    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==data.assessment_id).first()
+    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==data.assessment_id, UserAssessment.status == "pending").first()
 
     if not user_assessment_instance:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
@@ -96,7 +96,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             db.refresh(user_assessment_instance)
 
             # assign badge
-            assign_badge(user_id, user_assessment_instance.assessment_id)
+            assign_badge(user_id, user_assessment_instance.id)
             background_task.add_task(send_email, user_id, db)
             '''
             # check if each badge where the score falls within the range
@@ -148,5 +148,4 @@ def assign_badge(user_id, assessment_id):
         f"{settings.BADGE_SERVICE}",
         headers={},
         data={"user_id": user_id, "assessment_id":assessment_id}).json()
-    
-    
+

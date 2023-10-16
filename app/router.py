@@ -9,7 +9,7 @@ from app.services.external import (
         fetch_answered_and_unanswered_questions
     )
 from app.services.user_assessment import get_user_assessments_from_db
-from app.services.assessment import get_assessment_results
+from app.services.assessment import get_assessment_results,get_completed_assessments
 from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
 from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions,SingleAssessmentResponse
 from app.services.user_session import  save_session,send_email
@@ -153,7 +153,7 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     status_code: 500
     }
     """
-    
+
     user = authenticate_user(token=token, permission="assessment.read")
     # user = fake_authenticate_user()
 
@@ -322,7 +322,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     #check for corresponding matching id
     if err:
         raise err
-    
+
     if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
 
@@ -330,8 +330,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
 
-    response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
-    response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
+    # response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
+    # response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db, count=False)
@@ -339,7 +339,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     #check for availability of questions under the assessment_id
     if error:
         raise error
-    
+
     if not questions_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
 
@@ -352,6 +352,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
             question_no=question.question_no or 0,
             question_text=question.question_text ,
             question_type=question.question_type ,
+            answer_id=question.answer.id,
             options=question.answer.options
             ))
 
@@ -371,7 +372,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
         db.commit()
         db.refresh(user_assessment)
 
-    
+
     return {
         "message": "Assessment started successfully",
         "status_code": 200,
@@ -381,31 +382,20 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     }
 
 
-@router.get("/session")
-async def get_session_details(response:Request,token:str = Header(...),db:Session = Depends(get_db),):
+@router.get("/session[/{assessment_id}")
+async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
 
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
     #get assessment id from cookie
-    assessment_id = response.cookies.get("assessment_session")
 
-    if not assessment_id:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
-        return RedirectResponse(redirect_url, status_code=302)
-
-    #get duration from cookie
-    duration = response.cookies.get("assessment_duration")
-
-    if not duration:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
-        return RedirectResponse(redirect_url, status_code=302)
 
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
 
     if error:
         raise error
-    
+
     if not unanswered_question:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Assessment already completed")
 
@@ -420,10 +410,11 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
                 question_type=question.question.question_type,
+                answer_id=question.answer_id or 0,
                 options=question.answer.options,
                 user_selected_answer= question.selected_response,
                 ))
-            
+
     if unanswered_question != []:
 
         for question in unanswered_question:
@@ -432,6 +423,7 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 question_no=question.question_no or 0,
                 question_text=question.question_text,
                 question_type=question.question_type,
+                answer_id=question.answer.id,
                 options=question.answer.options
                 ))
 
@@ -448,8 +440,8 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
 async def get_assessment_result(
     assessment_id: int,
     token:str = Header(...),
-    db: Session = Depends(get_db), 
-   
+    db: Session = Depends(get_db),
+
 ):
     """
     Retrieve assessment results for a user.
@@ -551,17 +543,29 @@ async def submit_assessment(
 
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-    
+
     return save_session(response, user.id,db=db, background_task=background_task)
+
+
+
+@router.get('/get-user-assessments')
+def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(get_db)):
+    user = authenticate_user(token=token, permission="assessment.read")
+    # user=fake_authenticate_user()
+    completed_assessments,error=get_completed_assessments(user.id,db=db)
+    if error:
+        raise error
+    return completed_assessments
+
 
 
 
 
 @router.get("/{skill_id}")
 def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(get_db),):
-    
+
     user = authenticate_user(token=token, permission="assessment.read")
-    #edit below to match the right permission 
+    #edit below to match the right permission
     if not Permission.check_permission(user.permissions, "assessment.read"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
@@ -573,15 +577,15 @@ def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(ge
         raise error
     if not single_assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-    
+
     question_count, err = fetch_questions(assessment_id=single_assessment_instance.id,db=db, count=True)
 
     if err:
         raise err
-    
+
     if not question_count:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-    
+
     response = {
         "assessment_id":single_assessment_instance.id,
         "skill_id": skill_id,
@@ -595,3 +599,5 @@ def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(ge
         }
 
     return response
+
+

@@ -19,6 +19,7 @@ class Questions(BaseModel):
     question_no: int
     question_text: str
     question_type: str
+    answer_id: int
     user_selected_answer: Optional[str] = None
     options: Set
 class StartAssessmentResponse(Questions):
