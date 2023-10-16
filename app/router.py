@@ -382,7 +382,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     }
 
 
-@router.get("/session[/{assessment_id}")
+@router.get("/session/{assessment_id}")
 async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
 
     user = authenticate_user(token=token, permission="assessment.update.own")
