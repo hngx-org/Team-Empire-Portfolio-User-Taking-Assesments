@@ -27,7 +27,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
         status code of the response
 
     """
-    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==data.assessment_id).first()
+    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==data.assessment_id, UserAssessment.status == "pending").first()
 
     if not user_assessment_instance:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
