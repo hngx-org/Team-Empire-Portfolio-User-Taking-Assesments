@@ -122,9 +122,9 @@ def get_completed_assessments(user_id,db:Session):
                 "user_id": assessment.user_id,
                 "status": assessment.status,
                 "submission_date": assessment.submission_date,
-                "badge_id":assessment.user_badge[0].badge_id,
-                "badge_name":assessment.user_badge[0].skill_badge.name,
-                "skill_id":assessment.user_badge[0].skill_badge.skill_id
+                "badge_id":assessment.user_badge[0].badge_id if assessment.user_badge else None,
+                "badge_name":assessment.user_badge[0].skill_badge.name if assessment.user_badge else None,
+                "skill_id":assessment.user_badge[0].skill_badge.skill_id if assessment.user_badge else None,
 
 
             }
