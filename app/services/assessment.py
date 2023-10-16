@@ -116,15 +116,16 @@ def get_completed_assessments(user_id,db:Session):
     for assessment in completed_assessments:
         response.append(
             {
-                "assessment_id":assessment.assessment_id,
-                "score":assessment.score,
                 "id": assessment.id,
                 "user_id": assessment.user_id,
+                "assessment_id":assessment.assessment_id,
+                "assessment_name":assessment.assessment.title if assessment.assessment else None,
+                "skill_id":assessment.user_badge[0].skill_badge.skill_id if assessment.user_badge else None,
+                "score":assessment.score,
                 "status": assessment.status,
                 "submission_date": assessment.submission_date,
                 "badge_id":assessment.user_badge[0].badge_id if assessment.user_badge else None,
                 "badge_name":assessment.user_badge[0].skill_badge.name if assessment.user_badge else None,
-                "skill_id":assessment.user_badge[0].skill_badge.skill_id if assessment.user_badge else None,
 
 
             }
