@@ -20,7 +20,7 @@ def authenticate_user(permission: str,token: str ):
 
     Raises:
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
-    
+
     """
 
     request = post(
@@ -32,10 +32,10 @@ def authenticate_user(permission: str,token: str ):
 
     if request.get("status") == 401:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    
+
     if request.get("status") != 200:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-    
+
     if Permission.check_permission(request.get("user").get("permissions"), permission):
 
         data = {
@@ -61,18 +61,18 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
 
     Raises:
     - HTTPException: This is raised if the authentication service returns a status code other than 200.
-    
+
     """
     if fake_token != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    
+
     data = {
         "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
     return AuthenticateUser(**data)
-    
+
 def check_for_assessment(assessment_id:str,db:Session):
     """
         Check for assessment:
@@ -95,9 +95,9 @@ def check_for_assessment(assessment_id:str,db:Session):
     check = db.query(Assessment).filter(Assessment.id==assessment_id).first()
     if not check :
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found for provided assessment_id ")
-    
+
     return check,None
-    
+
 
 
 
@@ -123,7 +123,7 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
 
     if count:
         return questions.count(), None
-    
+
     questions = questions.all()
 
     if not questions:
@@ -131,7 +131,7 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
         err_message = "No questions found under the assessment_id"
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
     return questions, None
-    
+
 
 
 def fetch_single_assessment(skill_id:str,db:Session):
@@ -158,7 +158,7 @@ def fetch_single_assessment(skill_id:str,db:Session):
 
     if not assessment_details :
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found")
-    
+
     return assessment_details,None
 
 def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Session):
@@ -180,10 +180,10 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
 
         - questions : list
             returns the list of unanswered questions under the assessment_id
-        
+
         - None : None
             returns None if there is no match
-        
+
         - HTTPException : HTTPException
             returns HTTPException if there is no match
     """
@@ -193,14 +193,14 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
-    
+
     #query for any questions corresponding to the assessment_id
     user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id).first()
     if not user_assement_instance:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
-    
+
     answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
 
     if answered_questions != []:
@@ -210,4 +210,3 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
                     questions.remove(question)
 
     return questions, answered_questions, None
-        

@@ -96,7 +96,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             db.refresh(user_assessment_instance)
 
             # assign badge
-            assign_badge(user_id, user_assessment_instance.assessment_id)
+            assign_badge(user_id, user_assessment_instance.id)
             background_task.add_task(send_email, user_id, db)
             '''
             # check if each badge where the score falls within the range
@@ -148,5 +148,4 @@ def assign_badge(user_id, assessment_id):
         f"{settings.BADGE_SERVICE}",
         headers={},
         data={"user_id": user_id, "assessment_id":assessment_id}).json()
-    
-    
+

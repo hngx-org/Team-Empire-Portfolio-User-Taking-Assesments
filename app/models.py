@@ -133,7 +133,7 @@ class UserAssessment(BaseModel):
     assessment = relationship("Assessment", back_populates="user_assessment", lazy="joined")
     user_response = relationship(
         "UserResponse", back_populates="user_assessment", lazy="joined")
-    user_badge = relationship("UserBadge", back_populates="assessment", lazy="joined")
+    user_badge = relationship("UserBadge", back_populates="user_assessment", lazy="joined")
 
 
 class Assessment(BaseModel):
@@ -340,7 +340,7 @@ class SkillBadge(DATEBaseModel):
     )
 
     skill = relationship("Skill", back_populates="skill_badge")
-    user_badge = relationship("UserBadge", back_populates="badge")
+    user_badge = relationship("UserBadge", back_populates="skill_badge",lazy="joined")
 
 
 class UserResponse(BaseModel):
@@ -454,8 +454,8 @@ class UserBadge(DATEBaseModel):
                        nullable=False, onupdate=text("now()"))
 
     user = relationship("User", back_populates="user_badge")
-    badge = relationship("SkillBadge", back_populates="user_badge")
-    assessment = relationship("UserAssessment", back_populates="user_badge")
+    skill_badge = relationship("SkillBadge", back_populates="user_badge",lazy="joined")
+    user_assessment = relationship("UserAssessment", back_populates="user_badge",lazy="joined")
 
 
 class Track(BaseModel):
@@ -467,4 +467,3 @@ class UserTrack(BaseModel):
     user_id = Column(UUID, ForeignKey(
     "user.id", ondelete="CASCADE"), nullable=False)
     track_id = Column(Integer)
-    
