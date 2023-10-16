@@ -330,8 +330,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     duration = assessment_instance.duration_minutes
     duration_seconds = duration*60
 
-    response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
-    response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
+    # response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
+    # response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db, count=False)
@@ -352,6 +352,7 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
             question_no=question.question_no or 0,
             question_text=question.question_text ,
             question_type=question.question_type ,
+            answer_id=question.answer.id,
             options=question.answer.options
             ))
 
@@ -381,24 +382,13 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     }
 
 
-@router.get("/session")
-async def get_session_details(response:Request,token:str = Header(...),db:Session = Depends(get_db),):
+@router.get("/session[/{assessment_id}")
+async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
 
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
     #get assessment id from cookie
-    assessment_id = response.cookies.get("assessment_session")
 
-    if not assessment_id:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
-        return RedirectResponse(redirect_url, status_code=302)
-
-    #get duration from cookie
-    duration = response.cookies.get("assessment_duration")
-
-    if not duration:
-        redirect_url = f"{settings.FRONTEND_URL}/assessments/dashboard"
-        return RedirectResponse(redirect_url, status_code=302)
 
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
@@ -420,6 +410,7 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
                 question_type=question.question.question_type,
+                answer_id=question.answer_id or 0,
                 options=question.answer.options,
                 user_selected_answer= question.selected_response,
                 ))
@@ -432,6 +423,7 @@ async def get_session_details(response:Request,token:str = Header(...),db:Sessio
                 question_no=question.question_no or 0,
                 question_text=question.question_text,
                 question_type=question.question_type,
+                answer_id=question.answer.id,
                 options=question.answer.options
                 ))
 

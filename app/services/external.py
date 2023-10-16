@@ -188,18 +188,20 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
             returns HTTPException if there is no match
     """
     #query for any questions corresponding to the assessment_id
+    user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id, UserAssessment.status == "pending").first()
+    if not user_assement_instance:
+        #for any reason if  there are no questions return false
+        err_message = "No questions found under the assessment_id"
+        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+    
+
+    #query for any questions corresponding to the assessment_id
     questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
 
-    #query for any questions corresponding to the assessment_id
-    user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id).first()
-    if not user_assement_instance:
-        #for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
-        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
 
     answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
 
