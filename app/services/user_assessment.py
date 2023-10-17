@@ -36,7 +36,7 @@ def get_user_assessments_from_db(user_id: str,db=Session):
     if not skill:
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No skill found for this user")
     
-    assessments = db.query(Assessment).filter(Assessment.skill_id==skill.id, Assessment.user_assessment.status=="pending").all()
+    assessments = db.query(Assessment).filter(Assessment.skill_id==skill.id).all()
 
     for i in assessments:
         q = db.query(Question).filter(Question.assessment_id==i.id).all()
