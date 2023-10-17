@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks
 
 
 # save session details
-def save_session(data: UserAssessmentanswer, user_id: int, db:Session, background_task: BackgroundTasks):
+def save_session(data: UserAssessmentanswer, user_id: int, db:Session, background_task: BackgroundTasks, token: str):
 
     """
     Save session details:
@@ -60,7 +60,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
 
     else:
 
-        try:
+        # try:
 
             # fetch all userresponse tied to the userassessment id
             userdata = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id).all()
@@ -93,8 +93,8 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             db.refresh(user_assessment_instance)
 
             # assign badge
-            # badge = assign_badge(user_id, user_assessment_instance.id)
-            # print(badge)
+            badge = assign_badge(user_id, user_assessment_instance.id, token)
+            print(badge)
             # background_task.add_task(send_email, user_id, db)
             '''
             # check if each badge where the score falls within the range
@@ -120,13 +120,13 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
                 "message":"Session details saved successfully",
                 "status_code":status.HTTP_200_OK,
                 "score":score,
-                # "badge_id":badge,
+                "badge_id":badge,
                 "assessment_id":user_assessment_instance.assessment_id,
             }
 
-        except Exception as e:
-            print(e)
-            return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to calculate score")
+        # except Exception as e:
+        #     print(e)
+        #     return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to calculate score")
 
 def send_email(user_id,db:Session):
     # get user email and name
@@ -142,16 +142,16 @@ def send_email(user_id,db:Session):
     #     raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
     # return response.status_code
 
-def assign_badge(user_id, assessment_id):
+def assign_badge(user_id, assessment_id, token):
 
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
-        headers={},
-        data={"user_id": user_id, "assessment_id":assessment_id})
-
+        headers={"Authorization": f"Bearer {token}"},
+        data=json.dumps({"assessment_id": 2664})
+    )
     if req.status_code == 200:
-        print(req.json())
         return req.json().get("data").get("badge").get("id")
     
     if req.status_code == 400:
-        return req.text
+        raise HTTPException(status_code=req.status_code, detail=req.json().get("errors"))
+    
