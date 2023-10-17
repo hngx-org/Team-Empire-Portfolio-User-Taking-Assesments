@@ -326,12 +326,6 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     if not assessment_instance:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
 
-    #retrieve assessment duration for setting cookies
-    duration = assessment_instance.duration_minutes
-    duration_seconds = duration*60
-
-    # response.set_cookie(key="assessment_duration",value= f"{duration_seconds}",expires=duration_seconds)
-    # response.set_cookie(key="assessment_session",value= f"{assessment_id}",expires=duration_seconds)
 
     #get all questions for the assessment
     questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db, count=False)
@@ -406,7 +400,7 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
 
         for question in answered_question:
             answered_question_list.append(Questions(
-                question_id=question.id,
+                question_id=question.question_id,
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
                 question_type=question.question.question_type,

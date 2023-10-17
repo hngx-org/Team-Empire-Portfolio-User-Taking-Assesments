@@ -95,7 +95,7 @@ def check_for_assessment(assessment_id:str,db:Session):
     check = db.query(Assessment).filter(Assessment.id==assessment_id).first()
     if not check :
         return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found for provided assessment_id ")
-
+    print("check",check)
     return check,None
 
 
@@ -118,6 +118,7 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
         - questions : list
             returns the list of questions under the assessment_id
     """
+    print("assessment_id",assessment_id)
     # #query for any questions corresponding to the assessment_id and do a join with the answers table
     questions = db.query(Question).filter(Question.assessment_id==assessment_id)
 
@@ -125,7 +126,12 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
         return questions.count(), None
 
     questions = questions.all()
-
+    from pprint import pprint
+    for i in questions:
+        pprint(i.__dict__)
+        print("==================\n\n\n\n")
+        pprint(i.answer.__dict__)
+        print("==================\n\n\n\n")
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
@@ -203,12 +209,14 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
 
 
-    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
-
+    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id)
     if answered_questions != []:
-        for q in answered_questions:
-            for question in questions:
-                if q.question_id == question.id:
-                    questions.remove(question)
+        for q_ans in answered_questions.all():
+            for q in questions:
+                if q_ans.question_id == q.id:
+                    questions.remove(q)
 
+    answered_questions = answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
+            
+                    
     return questions, answered_questions, None

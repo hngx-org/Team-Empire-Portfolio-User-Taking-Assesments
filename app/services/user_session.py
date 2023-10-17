@@ -32,35 +32,31 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
     if not user_assessment_instance:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
 
-    if not data.is_submitted:
+    if not data.is_submitted and  data.time_spent == None:
         User_Response = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id,UserResponse.question_id==data.response.question_id).first()
-        if User_Response:
+        
+        if not User_Response:
+            
+            data = UserResponse(
+                user_assessment_id=user_assessment_instance.id,
+                question_id=data.response.question_id,
+                answer_id=data.response.user_answer_id,
+                selected_response=data.response.answer_text
+            )
+
+            db.add(data)
+            db.commit()
+            db.refresh(data)
+
+            return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
+
+        else:
             User_Response.answer_id = data.response.user_answer_id
             User_Response.selected_response = data.response.answer_text
             db.commit()
             db.refresh(User_Response)
+
             return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
-
-        else:
-
-            try:
-
-                data = UserResponse(
-                    user_assessment_id=user_assessment_instance.id,
-                    question_id=data.response.question_id,
-                    answer_id=data.response.user_answer_id,
-                    selected_response=data.response.answer_text
-                )
-
-                db.add(data)
-                db.commit()
-                db.refresh(data)
-
-                return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
-
-            except Exception as e:
-                print(e)
-                return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to save session details")
 
     else:
 
@@ -92,11 +88,12 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             # update the userassessment table with the score and status
             user_assessment_instance.score = score
             user_assessment_instance.status = "complete"
+            user_assessment_instance.time_spent = data.time_spent
             db.commit()
             db.refresh(user_assessment_instance)
 
             # assign badge
-            assign_badge(user_id, user_assessment_instance.id)
+            badge = assign_badge(user_id, user_assessment_instance.id)
             background_task.add_task(send_email, user_id, db)
             '''
             # check if each badge where the score falls within the range
@@ -121,7 +118,9 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             return {
                 "message":"Session details saved successfully",
                 "status_code":status.HTTP_200_OK,
-                "score":score
+                "score":score,
+                "badge_id":badge,
+                "assessment_id":user_assessment_instance.assessment_id,
             }
 
         except Exception as e:
@@ -147,5 +146,10 @@ def assign_badge(user_id, assessment_id):
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={},
-        data={"user_id": user_id, "assessment_id":assessment_id}).json()
+        data={"user_id": user_id, "assessment_id":assessment_id})
 
+    if req.status_code == 200:
+        return req.json().get("data").get("badge").get("id")
+    
+    if req.status_code == 400:
+        return req.text
