@@ -93,7 +93,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db:Session, backgroun
             db.refresh(user_assessment_instance)
 
             # assign badge
-            badge = assign_badge(user_id, user_assessment_instance.id, token)
+            badge = assign_badge( user_assessment_instance.id, token)
             print(badge)
             # background_task.add_task(send_email, user_id, db)
             '''
@@ -142,7 +142,7 @@ def send_email(user_id,db:Session):
     #     raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
     # return response.status_code
 
-def assign_badge(user_id, assessment_id, token):
+def assign_badge( assessment_id, token):
 
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
@@ -150,9 +150,9 @@ def assign_badge(user_id, assessment_id, token):
         data=json.dumps({"assessment_id": int(assessment_id)})
     )
 
-    if req.status_code == 200:
-        return req.json()['data']['badge']['id']
-    
     if req.status_code == 400:
         raise HTTPException(status_code=req.status_code, detail=req.json().get("errors"))
+    if req.status_code == 201:
+        return req.json()['data']['badge']['id']
+    
     
