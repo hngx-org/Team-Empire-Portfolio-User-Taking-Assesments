@@ -149,8 +149,9 @@ def assign_badge(user_id, assessment_id, token):
         headers={"Authorization": f"Bearer {token}"},
         data=json.dumps({"assessment_id": int(assessment_id)})
     )
+
     if req.status_code == 200:
-        return req.json().get("data").get("badge").get("id")
+        return req.json()['data']['badge']['id']
     
     if req.status_code == 400:
         raise HTTPException(status_code=req.status_code, detail=req.json().get("errors"))
