@@ -448,10 +448,6 @@ class UserBadge(DATEBaseModel):
         "skill_badge.id", ondelete="CASCADE"), nullable=False)
     user_assessment_id = Column(Integer, ForeignKey(
         "user_assessment.id", ondelete="CASCADE"), nullable=False)
-    createdAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, server_default=text("now()"))
-    updatedAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, onupdate=text("now()"))
 
     user = relationship("User", back_populates="user_badge")
     skill_badge = relationship("SkillBadge", back_populates="user_badge",lazy="joined")
