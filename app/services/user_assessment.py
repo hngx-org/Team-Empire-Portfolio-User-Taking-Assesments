@@ -38,6 +38,12 @@ def get_user_assessments_from_db(user_id: str,db=Session):
     
     assessments = db.query(Assessment).filter(Assessment.skill_id==skill.id).all()
 
+    for i in assessments:
+        q = db.query(Question).filter(Question.assessment_id==i.id).all()
+        if len(q) == 0:
+
+            assessments.remove(i)
+
 #######################################################################################################################
 #     assessments = (
 #     db.query(Assessment)
