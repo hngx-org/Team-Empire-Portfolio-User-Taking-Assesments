@@ -255,7 +255,7 @@ class userResponse(BaseModel):
 class UserAssessmentanswer(BaseModel):
     assessment_id: int
     is_submitted: bool = False 
-    time_spent: int = None
+    time_spent: Union[int, None] = None
     response: Union[userResponse, None]= None
     
 
