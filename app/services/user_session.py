@@ -147,7 +147,7 @@ def assign_badge(user_id, assessment_id, token):
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={"Authorization": f"Bearer {token}"},
-        data=json.dumps({"assessment_id": 2664})
+        data=json.dumps({"assessment_id": int(assessment_id)})
     )
     if req.status_code == 200:
         return req.json().get("data").get("badge").get("id")
