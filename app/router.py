@@ -367,8 +367,7 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
     if error:
         raise error
 
-    if not unanswered_question:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Assessment already completed")
+
 
     answered_question_list = []
     unanswered_question_list = []
