@@ -29,7 +29,7 @@ def get_user_assessments_from_db(user_id: str,db=Session):
 
     
     if not track:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No category name with this track")
     
     skill = db.query(Skill).filter(Skill.category_name==track.track).first()
 

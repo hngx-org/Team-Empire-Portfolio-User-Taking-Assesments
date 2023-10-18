@@ -275,7 +275,7 @@ class Answer(BaseModel):
     Columns:
 
     - question_id: foreign key to question table.
-    - answer_text: text of the answer.
+    - options: list of options of the answer.
     - correct_option: correct option of the answer.
 
     Inherited columns:
