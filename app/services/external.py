@@ -126,12 +126,7 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
         return questions.count(), None
 
     questions = questions.all()
-    from pprint import pprint
-    for i in questions:
-        pprint(i.__dict__)
-        print("==================\n\n\n\n")
-        pprint(i.answer.__dict__)
-        print("==================\n\n\n\n")
+
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"

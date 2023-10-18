@@ -29,129 +29,90 @@ router = APIRouter(tags=["Assessments"], prefix="/assessments")
 @router.get("" )
 async def get_all_user_assessments(token:str = Header(...), db: Session = Depends(get_db)):
     """
-
-    Retrieve all assessments taken by a user.
+    Retrieve all assessments for a user.
 
     Method: GET
-    Request: User ID
+    Request: Token
+
     Response:
 
         - message: Message indicating the status of the request
         - status_code: Status code of the request
-        - assessments: List of assessments taken by the user
+        - assessments: List of assessments the user can take based on their skills
 
     Error Response:
 
-        - message: Message indicating the status of the request
-        - status_code: Status code of the request
+            - message: Message indicating the status of the request
+            - status_code: Status code of the request
 
     Example request:
-
-            curl -X GET "http://localhost:8000/api/assessments/?user_id=1" -H  "accept: application/json"
+    
+                curl -X GET "http://localhost:8000/api/assessments" -H  "accept: application/json"  
 
     Example response:
-
 
             {
             "message": "Assessments fetched successfully",
             "status_code": 200,
-            assessments: [
-                {
-                    "id": 1,
-                    "user_id": "1",
-                    "assessment_id": 1,
-                    "score": 0.0,
-                    "status": "in_progress",
-                    "submission_date": "2021-09-08T15:43:00.000Z",
-                    "assessment": {
+            "assessments": [
+                    Assessment(
                         "id": 1,
                         "title": "Python Assessment",
-                        "description": "This is a python assessment",
-                        "questions": [
-                            {
-                                "id": 1,
-                                "question_text": "What is Python?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 2,
-                                "question_text": "What is Python used for?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 3,
-                                "question_text": "What is the difference between a list and a tuple?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 4,
-                                "question_text": "What is the difference between a list and a dictionary?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 5,
-                                "question_text": "What is the difference between a list and a set?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 6,
-                                "question_text": "What is the difference between a set and a dictionary?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 7,
-                                "question_text": "What is the difference between a tuple and a dictionary?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 8,
-                                "question_text": "What is the difference between a tuple and a set?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 9,
-                                "question_text": "What is the difference between a dictionary and a set?",
-                                "question_type": "MCQ"
-                            },
-                            {
-                                "id": 10,
-                                "question_text": "What is the difference between a list, a tuple, a dictionary and a set?",
-                                "question_type": "MCQ"
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+                        "description": "Python assessment for beginners",
+                        "skil_id": 1,
+                        "duration_minutes": 60,
+                        "status": "pending",
+                        "start_date": "2021-05-01",
+                        "end_date": "2021-05-30"
+                    ),
+                    Assessment(
+                        "id": 2,
+                        "title": "Python Assessment",
+                        "description": "Python assessment for beginners",
+                        "skil_id": 1,
+                        "duration_minutes": 60,
+                        "status": "pending",
+                        "start_date": "2021-05-01",
+                        "end_date": "2021-05-30"
+                    )
+                ]
+            }
 
     Error response:
 
-
-                {
-                "message": "No assessments found for this user",
-                "status_code": 404
-                }
-
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+    
     Error response:
 
-                {
-                "message": "User does not exist",
-                "status_code": 404
-                }
+            {
+            "detail": "No skill found for this user",
+            "status_code": 404
+            }
 
     Error response:
-
-                {
-                "message": "User ID is required",
-                "status_code": 400
-                }
+    
+            {
+            "detail": "No track found for this user",
+            "status_code": 404
+            }
 
     Error response:
+        
+            {
+            "detail": "No category name with this track",
+            "status_code": 404
+            }
 
-    {
-    message: "failed to fetch assessments",
-    status_code: 500
-    }
+    Error response:
+    
+            {
+            "detail": "failed to fetch assessments",
+            "status_code": 500
+            }
+
     """
 
     user = authenticate_user(token=token, permission="assessment.read")
@@ -180,136 +141,76 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     Start an assessment for a user.
 
     Method: POST
-    Request_body: User ID, Assessment ID
+    Request_body: token, assessment_id
 
     Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
-            - questions: List of questions for the assessment
+    
+                - message: Message indicating the status of the request
+                - status_code: Status code of the request
+                - questions: List of questions for the assessment
 
     Error Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
+    
+                - message: Message indicating the status of the request
+                - status_code: Status code of the request
 
     Example request:
 
-            curl -X POST "http://localhost:8000/api/assessments/start-assessment" -H  "accept: application/json" -H  "Content-Type: application/json" -d "{\"user_id\":\"1\",\"assessment_id\":1}"
+                curl -X POST "http://localhost:8000/api/assessments/start-assessment" -H  "accept: application/json" -H  \
+                "Content-Type: application/json" -d "{\"assessment_id\":1}"
 
     Example response:
 
-            {
-            "message": "Assessment started successfully",
-            "status_code": 200,
-            "questions": [
                 {
-                    "id": 1,
-                    "question_number":1,
-                    "question_text": "What is Python?",
-                    "question_type": "MCQ",
-                    "options":["A. option 1","B. another answer","C. third option"]
-                },
-                {
-                    "id": 2,
-                    "question_number":2,
-                    "question_text": "What is Python used for?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 3,
-                    "question_number":3,
-                    "question_text": "What is the difference between a list and a tuple?",
-                    "question_type": "MCQ",
-                    "options":["A. option 1","B. another answer","C. third option"]
-                },
-                {
-                    "id": 4,
-                    "question_number":4,
-                    "question_text": "What is the difference between a list and a dictionary?",
-                    "question_type": "MCQ",
-                    "options":["A. first option ","B.another answer","C. third option"]
-                },
-                {
-                    "id": 5,
-                    "question_number":5,
-                    "question_text": "What is the difference between a list and a set?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 6,
-                    "question_number":6,
-                    "question_text": "What is the difference between a set and a dictionary?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 7,
-                    "question_number":7,
-                    "question_text": "What is the difference between a tuple and a dictionary?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 8,
-                    "question_number":8,
-                    "question_text": "What is the difference between a tuple and a set?",
-                    "question_type": "MCQ"
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 9,
-                    "question_number":9,
-                    "question_text": "What is the difference between a dictionary and a set?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
-                },
-                {
-                    "id": 10,
-                    "question_number":10,
-                    "question_text": "What is the difference between a list, a tuple, a dictionary and a set?",
-                    "question_type": "MCQ",
-                    "options":["A. option A","B. another answer","C. third option"]
+                "message": "Assessment started successfully",
+                "status_code": 200,
+                "data": {
+                    questions: [
+                    Questions(
+                        "question_id": 1,
+                        "question_no": 1,
+                        "question_text": "What is python?",
+                        "question_type": "single_choice",
+                        "answer_id": 1,
+                        "options": [
+                                "Option 1",
+                                "Option 2",
+                                "Option 3",
+                                "Option 4"
+                            ]
+                        )
+                    ]
                 }
-            ]
-        }
+            }
 
     Error response:
-
-                    {
-                    "message": "Assessment already started",
-                    "status_code": 400
-                    }
-
-    Error response:
-
-                        {
-                        "message": "Assessment does not exist",
-                        "status_code": 404
-                        }
+    
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
 
     Error response:
-
-                            {
-                            "message": "User does not exist",
-                            "status_code": 404
-                            }
-
-    Error response:
-
-                                    {
-                                    "message": "User ID is required",
-                                    "status_code": 400
-                                    }
+        
+            {
+            "detail": "No assessment found for provided assessment_id ",
+            "status_code": 404
+            }
 
     Error response:
+            
+            {
+            "detail": "No questions found under the assessment_idr",
+            "status_code": 404
+            }
 
-        {
-        message: "failed to start assessment",
-        status_code: 500
-        }
+    Error response:
+                    
+            {
+            "detail": "Critical error occured while getting assessment details",
+            "status_code": 500
+            }
+
     '''
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
@@ -378,7 +279,83 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
 
 @router.get("/session/{assessment_id}")
 async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
+    """
+    Retrieve session details for a user.
 
+    Method: GET
+    Request: Token, Assessment ID
+
+    Response:
+    
+            - message: Message indicating the status of the request
+            - status_code: Status code of the request
+            - data: List of answered and unanswered questions for the assessment
+
+    Error Response:
+        
+                - message: Message indicating the status of the request
+                - status_code: Status code of the request
+    
+    Example request:
+    
+                curl -X GET "http://localhost:8000/api/assessments/session/1" -H  "accept: application/json" -H  \
+                "Content-Type: application/json" -d "{\"assessment_id\":1}"
+    
+    Example response:
+        
+                {
+                "message": "Session details fetched successfully",
+                "status_code": 200,
+                "data": {
+                    "answered_questions": [
+                        Questions(
+                            "question_id": 1,
+                            "question_no": 1,
+                            "question_text": "What is python?",
+                            "question_type": "single_choice",
+                            "answer_id": 1,
+                            "options": [
+                                    "Option 1",
+                                    "Option 2",
+                                    "Option 3",
+                                    "Option 4"
+                                ],
+                            "user_selected_answer": "Option 1"
+                            )
+                        ],
+                    "unanswered_questions": [
+                        Questions(
+                            "question_id": 2,
+                            "question_no": 2,
+                            "question_text": "What is python?",
+                            "question_type": "single_choice",
+                            "answer_id": 2,
+                            "options": [
+                                    "Option 1",
+                                    "Option 2",
+                                    "Option 3",
+                                    "Option 4"
+                                ]
+                            )
+                        ]
+                    }
+                }
+
+    Error response:
+            
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+
+    Error response:
+                    
+            {
+            "detail": "Assessment already completed",
+            "status_code": 400
+            }
+
+    """
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
     #get assessment id from cookie
@@ -468,17 +445,17 @@ async def get_assessment_result(
 
     Error response:
 
-                {
-                "message": "Assessment does not exist",
-                "status_code": 404
-                }
+            {
+            "message": "Assessment does not exist",
+            "status_code": 404
+            }
 
     Error response:
 
-                    {
-                    "message": "User does not exist",
-                    "status_code": 404
-                    }
+            {
+            "message": "User does not exist",
+            "status_code": 404
+            }
 
 
     """
@@ -504,32 +481,43 @@ async def submit_assessment(
     Submit an assessment for a user.
 
     Method: POST
-    Request_body: User ID, Assessment ID, Answers
+    Request_body: Token, Assessment ID, Answers, time_spent, question_ID
 
     Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
+    
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
 
     Error Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
+    
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
 
     Example request:
-
-            curl -X POST "http://localhost:8000/api/assessments/1/submit" -H  "accept: application/json" -H  \
-            "Content-Type: application/json" -d "{\"user_id\":\"1\",\"assessment_id\":1,\"answers\":[{\"question_id\":1,\"user_answer_id\":1},\
-                {\"question_id\":2,\"user_answer_id\":2},{\"question_id\":3,\"user_answer_id\":3},{\"question_id\":4,\"user_answer_id\":4},\
-                    {\"question_id\":5,\"user_answer_id\":5},{\"question_id\":6,\"user_answer_id\":6},{\"question_id\":7,\"user_answer_id\":7},\
-                        {\"question_id\":8,\"user_answer_id\":8},{\"question_id\":9,\"user_answer_id\":9},{\"question_id\":10,\"user_answer_id\":10}]}"
+        
+        curl -X POST "http://localhost:8000/api/assessments/submit" -H  "accept: application/json" -H  \
+        "Content-Type: application/json" -d "{\"assessment_id\":1,\"is_submitted\":true,\"time_spent\":60,\"response\":{\"question_id\":1,\"user_answer_id\":1}}"
 
     Example response:
+            
+            {
+            "message": "Assessment submitted successfully",
+            "status_code": 200
+            }
 
-                {
-                "message": "Assessment submitted successfully",
-                "status_code": 200
-                }
+    Error response:
+                
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+
+    Error response:
+                            
+            {
+            "detail": "Assessment already completed",
+            "status_code": 400
+            }
 
     """
     user = authenticate_user(token=token, permission="assessment.update.own")
@@ -544,6 +532,63 @@ async def submit_assessment(
 
 @router.get('/get-user-assessments')
 def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(get_db)):
+
+    """
+    Retrieve all completed assessments for a user.
+
+    Method: GET
+    Request: Token
+
+    Response:
+    
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
+        - assessments: List of assessments the user has completed
+
+    Error Response:
+        
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
+
+    Example request:
+
+        curl -X GET "http://localhost:8000/api/assessments/get-user-assessments" -H  "accept: application/json"
+
+    Example response:
+    
+            {
+            "message": "Completed assessments fetched successfully",
+            "status_code": 200,
+            "assessments": [
+            {
+                "id": 1,
+                "user_id": 345-345mnb-345,
+                "assessment_id": 1,
+                "assessment_name": "Python Assessment",
+                "skill_id": 1,
+                "score": 10.0,
+                "status": "complete",
+                "submission_date": "2021-05-01",
+                "badge_id": 1,
+                "badge_name": "Intermediate"
+            }
+        ]
+
+    Error response:
+
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+
+    Error response:
+
+            {
+            "detail": "No assessments found for this user",
+            "status_code": 404
+            }
+
+    """
     user = authenticate_user(token=token, permission="assessment.read")
     # user=fake_authenticate_user()
     completed_assessments,error=get_completed_assessments(user.id,db=db)
@@ -557,13 +602,65 @@ def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(
 
 @router.get("/{skill_id}")
 def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(get_db),):
+    """
+    Retrieve assessment details for an assessment.
+
+    Method: GET
+    Request: Token, Skill ID
+
+    Response:
+
+        - assessment_id: ID of the assessment
+        - skill_id: ID of the skill
+        - title: Title of the assessment
+        - description: Description of the assessment
+        - duration_minutes: Duration of the assessment
+        - question_count: Number of questions in the assessment
+        - status: Status of the assessment
+        - start_date: Start date of the assessment
+        - end_date: End date of the assessment
+
+    Error Response:
+    
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
+
+    Example request:
+
+        curl -X GET "http://localhost:8000/api/assessments/1" -H  "accept: application/json"
+
+    Example response:
+    
+            {
+            "assessment_id": 1,
+            "skill_id": 1,
+            "title": "Python Assessment",
+            "description": "Python assessment for beginners",
+            "duration_minutes": 60,
+            "question_count": 10,
+            "status": "pending",
+            "start_date": "2021-05-01",
+            "end_date": "2021-05-30"
+            }
+
+    Error response:
+    
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+
+    Error response:
+                        
+            {
+            "detail": "No questions found under the assessment_id",
+            "status_code": 404
+            }
+
+    """
 
     user = authenticate_user(token=token, permission="assessment.read")
     #edit below to match the right permission
-    if not Permission.check_permission(user.permissions, "assessment.read"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="User does not have permission to start assessments")
-
     single_assessment_instance,error = fetch_single_assessment(skill_id=skill_id,db=db)
 
     #check for corresponding errors
