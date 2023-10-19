@@ -1,9 +1,10 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
-from fastapi import HTTPException,status
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment, Track, UserTrack, Skill
+from fastapi import HTTPException, status
+from app.models import Question, Assessment, Track, UserTrack, Skill, UserAssessment
 
 
-def get_user_assessments_from_db(user_id: str,db=Session):
+def get_user_assessments_from_db(user_id: str, db: Session):
     """
     Get user assessments:
         This function gets the assessments of a user
@@ -15,46 +16,46 @@ def get_user_assessments_from_db(user_id: str,db=Session):
         database session
 
     Returns:
-    - assessments : List[UserAssessment]
-        list of UserAssessment objects
+    - assessments : List[Assessment]
+        list of Assessment objects a user can take
         
     """
-    # Replace when live data is available on DB
-    user_track = db.query(UserTrack).filter(UserTrack.user_id==user_id).first()
-    # print(user_track.track_id)
+    user_track = (
+        db.query(UserTrack, Track, Skill)
+        .join(Track, UserTrack.track_id == Track.id)
+        .join(Skill, Track.track == Skill.category_name)
+        .filter(UserTrack.user_id == user_id)
+        .first()
+    )
+
     if not user_track:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No track found for this user")
-    
-    track = db.query(Track).filter(Track.id==user_track.track_id).first()
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No track found for this user")
 
-    
-    if not track:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No category name with this track")
-    
-    skill = db.query(Skill).filter(Skill.category_name==track.track).first()
-
-    if not skill:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No skill found for this user")
-    
-    assessments = db.query(Assessment).filter(Assessment.skill_id==skill.id).all()
-
-    for i in assessments:
-        q = db.query(Question).filter(Question.assessment_id==i.id).all()
-        if len(q) == 0:
-
-            assessments.remove(i)
-
-#######################################################################################################################
-#     assessments = (
-#     db.query(Assessment)
-#     .join(Skill, Assessment.skill_id == Skill.id)
-#     .join(Track, Skill.category_name == Track.track)
-#     .join(UserTrack, UserTrack.track_id == Track.id)
-#     .filter(UserTrack.user_id == user_id)
-#     .all()
-# )
+    # Get all assessments for the user's skill category
+    assessments = (
+        db.query(Assessment)
+        .join(Question, Assessment.id == Question.assessment_id, isouter=True)
+        .filter(Assessment.skill_id == user_track.Skill.id)
+        .group_by(Assessment.id)
+        .having(func.count(Question.id) > 0)
+        .all()
+    )
 
     if not assessments:
         return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No assessments found for this user")
-    
+
+    # Get user assessments
+    user_assessments = (
+        db.query(UserAssessment)
+        .filter(UserAssessment.user_id == user_id)
+        .all()
+    )
+
+    # Create a set of assessment ids that the user has taken
+    taken_assessment_ids = set(ua.assessment_id for ua in user_assessments)
+
+    # Add a "taken" attribute to each assessment object
+    for assessment in assessments:
+        assessment.taken = assessment.id in taken_assessment_ids
+
     return assessments, None
