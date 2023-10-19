@@ -84,13 +84,6 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
             "detail": "Unauthorized",
             "status_code": 401
             }
-    
-    Error response:
-
-            {
-            "detail": "No skill found for this user",
-            "status_code": 404
-            }
 
     Error response:
     
@@ -100,9 +93,9 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
             }
 
     Error response:
-        
+
             {
-            "detail": "No category name with this track",
+            "detail": "No assessments found for this user",
             "status_code": 404
             }
 
