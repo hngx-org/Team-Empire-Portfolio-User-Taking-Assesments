@@ -38,3 +38,5 @@ venv
 Pipfile
 Pipfile.lock
 
+*.sql
+*.vscode/
