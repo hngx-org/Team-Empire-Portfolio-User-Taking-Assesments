@@ -62,9 +62,7 @@ class Permissions():
 
         """
 
-        if permission in permission_list:
-            return True
-        return False
+        return permission in permission_list
 
     def check_permissions(self, permission_list):
         """
