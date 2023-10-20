@@ -26,7 +26,7 @@ class Settings:
     AUTH_SERVICE = config("AUTH_SERVICE")
     MESSAGING=config("MESSAGING")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
-    FRONTEND_URL = "https://google.com"
+    FRONTEND_URL = config("FRONTEND_URL") 
     BADGE_SERVICE= config("BADGE_SERVICE")
 
 

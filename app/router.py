@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header,BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -16,7 +16,9 @@ from app.schemas import StartAssessment, UserAssessmentanswer
 from app.response_schemas import Questions
 from app.services.user_session import  save_session
 from app.config import settings
-from app.models import UserAssessment
+from app.models import UserAssessment, Assessment
+import time
+from starlette.responses import RedirectResponse
 
 # if settings.ENVIRONMENT == "development":
 #     authenticate_user = fake_authenticate_user
@@ -128,7 +130,7 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
 
 
 @router.post("/start-assessment",)
-async def start_assessment( request:StartAssessment,response:Response, token:str = Header(...), db:Session = Depends(get_db),):
+async def start_assessment( request:StartAssessment,response:Response, r:Request,token:str = Header(...), db:Session = Depends(get_db),):
     '''
     Start an assessment for a user.
 
@@ -207,6 +209,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
 
+    skill_id = db.query(Assessment.skill_id).filter(Assessment.id == request.assessment_id).first()
+
     #check for assessment to get duration and set cookie
     assessment_questions, err = fetch_assessment_questions(user_id = user.id,assessment_id=request.assessment_id,db=db, count=False)
 
@@ -215,6 +219,12 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     
     if not assessment_questions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found under the assessment_id")
+
+    assessment_instance = db.query(Assessment).filter(Assessment.id == request.assessment_id).first()
+
+    duration = assessment_instance.duration_minutes
+
+    response.set_cookie(key="assessment", value=str(request.assessment_id), max_age=time.time() + duration*60, httponly=True)
 
 
     return {
@@ -227,8 +237,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     }
 
 
-@router.get("/session/{assessment_id}")
-async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
+@router.get("/session")
+async def get_session_details(req:Request,token:str = Header(...),db:Session = Depends(get_db),):
     """
     Retrieve session details for a user.
 
@@ -310,7 +320,13 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
     # user = fake_authenticate_user()
     #get assessment id from cookie
 
+    assessment_id = req.cookies.get("assessment")
+    if not assessment_id:
 
+        return {"url":f"{settings.FRONTEND_URL}/assessments/dashboard",
+                "status_code":302,
+                "message":"Assessment already started"
+                }
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
 
@@ -424,7 +440,7 @@ async def get_assessment_result(
 
 @router.post("/submit", )
 async def submit_assessment(
-    background_task:BackgroundTasks,response:UserAssessmentanswer, db: Session = Depends(get_db),token:str = Header(...)
+    req:UserAssessmentanswer,res:Response,r:Request, db: Session = Depends(get_db),token:str = Header(...)
 ):
     """
     Submit an assessment for a user.
@@ -475,7 +491,12 @@ async def submit_assessment(
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
 
-    return save_session(response, user.id,db=db, background_task=background_task, token= token)
+    if UserAssessmentanswer.is_submitted:
+        if r.cookies.get("assessment"):
+            # delete cookie
+            res.delete_cookie(key="assessment")
+
+    return save_session(req, user.id,db=db, token= token)
 
 
 

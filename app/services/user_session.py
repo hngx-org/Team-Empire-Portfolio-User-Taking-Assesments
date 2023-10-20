@@ -7,126 +7,115 @@ import requests
 import json
 from app.config import settings
 from fastapi import BackgroundTasks
-
+from datetime import datetime as time
 
 # save session details
-def save_session(data: UserAssessmentanswer, user_id: int, db:Session, background_task: BackgroundTasks, token: str):
-
+def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: str):
     """
     Save session details:
-        This function saves the session details of a user
+    This function saves the session details of a user
 
     Parameters:
     - data : SessionData
         SessionData object
     - user_id : int
         user id of the user
+    - db : Session
+        database session
+    - token : str
+        authentication token
 
     Returns:
-    - status_code : int
-        status code of the response
-
+    - response : dict
+        dictionary containing the response message, status code, score, badge ID, and assessment ID
     """
-    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.assessment_id==data.assessment_id, UserAssessment.status == "pending").first()
+    user_assessment_instance = (
+        db.query(UserAssessment)
+        .filter(
+            UserAssessment.user_id == user_id,
+            UserAssessment.assessment_id == data.assessment_id,
+            UserAssessment.status == "pending"
+        )
+        .first()
+    )
 
     if not user_assessment_instance:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="There is no match for user_id or assessment_id")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="There is no match for user_id or assessment_id"
+        )
 
-    if not data.is_submitted and  data.time_spent == None:
-        User_Response = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id,UserResponse.question_id==data.response.question_id).first()
-        
-        if not User_Response:
-            
-            userdata = UserResponse(
+    if not data.is_submitted and data.time_spent is None:
+        user_response_instance = (
+            db.query(UserResponse)
+            .filter(
+                UserResponse.user_assessment_id == user_assessment_instance.id,
+                UserResponse.question_id == data.response.question_id
+            )
+            .first()
+        )
+
+        if not user_response_instance:
+            user_response_instance = UserResponse(
                 user_assessment_id=user_assessment_instance.id,
                 question_id=data.response.question_id,
                 answer_id=data.response.user_answer_id,
                 selected_response=data.response.answer_text
             )
 
-            db.add(userdata)
+            db.add(user_response_instance)
             db.commit()
-            db.refresh(userdata)
-
-            return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
+            db.refresh(user_response_instance)
 
         else:
-            User_Response.answer_id = data.response.user_answer_id
-            User_Response.selected_response = data.response.answer_text
+            user_response_instance.answer_id = data.response.user_answer_id
+            user_response_instance.selected_response = data.response.answer_text
             db.commit()
-            db.refresh(User_Response)
+            db.refresh(user_response_instance)
 
-            return Response(message="Session details saved successfully",status_code=status.HTTP_200_OK)
+        return {
+            "message": "Session details saved successfully",
+            "status_code": status.HTTP_200_OK
+        }
 
     else:
+        user_responses = (
+            db.query(UserResponse)
+            .join(Answer, UserResponse.answer_id == Answer.id)
+            .filter(UserResponse.user_assessment_id == user_assessment_instance.id)
+            .all()
+        )
 
-        # try:
+        questions = (
+            db.query(Question)
+            .filter(Question.assessment_id == user_assessment_instance.assessment_id)
+            .all()
+        )
 
-            # fetch all userresponse tied to the userassessment id
-            userdata = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id).all()
+        score = sum(
+            user_response.selected_response == user_response.answer.correct_option
+            for user_response in user_responses
+        ) / len(questions) * 100
 
-            # fetch all questions tied to the userassessment id
-            questions = db.query(Question).filter(Question.assessment_id==user_assessment_instance.assessment_id).all()
 
-            # calculate score
-            score = 0
+        user_assessment_instance.score = score
+        user_assessment_instance.status = "complete"
+        user_assessment_instance.time_spent = data.time_spent
+        user_assessment_instance.submission_date = time.now()
 
-            for i in userdata:
+        db.commit()
 
-                # fetch the answer tied to the question id
-                answer = db.query(Answer).filter(Answer.question_id==i.question_id).first()
+        badge_id = assign_badge(user_assessment_instance.id, token)
 
-                # check if the user selected answer is equal to the correct answer
-                if i.selected_response == answer.correct_option:
-                    score += 1
 
-            score = (score/len(questions))*100
-
-            assessment_instance = db.query(Assessment).filter(Assessment.id==user_assessment_instance.assessment_id).first()
-            # badges = db.query(SkillBadge).filter(SkillBadge.skill_id==assessment_instance.skill_id).all()
-
-            # update the userassessment table with the score and status
-            user_assessment_instance.score = score
-            user_assessment_instance.status = "complete"
-            user_assessment_instance.time_spent = data.time_spent
-            db.commit()
-            db.refresh(user_assessment_instance)
-
-            # assign badge
-            badge = assign_badge( user_assessment_instance.id, token)
-            print(badge)
-            # background_task.add_task(send_email, user_id, db)
-            '''
-            # check if each badge where the score falls within the range
-            for badge in badges:
-
-                if badge.min_score <= score <= badge.max_score:
-
-                    user_assessment_instance.badge_id = badge.id
-                    break
-                continue
-
-            badge = UserBadge(
-                user_id=user_id,
-                badge_id=user_assessment_instance.badge_id,
-                assessment_id=user_assessment_instance.assessment_id
-            )
-
-            db.add(badge)
-            db.commit()
-            db.refresh(badge)
-            '''
-            return {
-                "message":"Session details saved successfully",
-                "status_code":status.HTTP_200_OK,
-                "score":score,
-                "badge_id":badge,
-                "assessment_id":user_assessment_instance.assessment_id,
-            }
-
-        # except Exception as e:
-        #     print(e)
-        #     return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="failed to calculate score")
+        return {
+            "message": "Submission and grading successful",
+            "status_code": status.HTTP_200_OK,
+            "score": score,
+            "badge_id": badge_id,
+            "assessment_id": user_assessment_instance.assessment_id,
+        }
+    
 
 def send_email(user_id,db:Session):
     # get user email and name
@@ -150,9 +139,8 @@ def assign_badge( assessment_id, token):
         data=json.dumps({"assessment_id": int(assessment_id)})
     )
 
-    if req.status_code == 400:
-        print(req.text)
-        return None
+    if req.status_code != 201:
+        raise HTTPException(status_code=req.status_code, detail="Error assigning badge")
     if req.status_code == 201:
         return req.json()['data']['badge']['id']
     
