@@ -118,13 +118,11 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     if not assessments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
 
-    response = {
+    return {
         "message": "Assessments fetched successfully",
         "status_code": 200,
-        "assessments": assessments
+        "assessments": assessments,
     }
-
-    return response
 
 
 @router.post("/start-assessment",)
@@ -324,29 +322,31 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
 
     if answered_question != []:
 
-        for question in answered_question:
-            answered_question_list.append(Questions(
+        answered_question_list.extend(
+            Questions(
                 question_id=question.question_id,
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
                 question_type=question.question.question_type,
                 answer_id=question.answer_id or 0,
                 options=question.answer.options,
-                user_selected_answer= question.selected_response,
-                ))
-
+                user_selected_answer=question.selected_response,
+            )
+            for question in answered_question
+        )
     if unanswered_question != []:
 
-        for question in unanswered_question:
-            unanswered_question_list.append(Questions(
+        unanswered_question_list.extend(
+            Questions(
                 question_id=question.id,
                 question_no=question.question_no or 0,
                 question_text=question.question_text,
                 question_type=question.question_type,
                 answer_id=question.answer.id,
-                options=question.answer.options
-                ))
-
+                options=question.answer.options,
+            )
+            for question in unanswered_question
+        )
     return {
         "message": "Session details fetched successfully",
         "status_code": 200,
@@ -412,15 +412,13 @@ async def get_assessment_result(
 
     score, assessment_status, answers = get_assessment_results(user_id=user.id, assessment_id=assessment_id, db=db)
 
-    response = {
+    return {
         "score": score,
         "user_id": user.id,
         "assessment_id": assessment_id,
         "status": assessment_status,
-        "answers": answers
+        "answers": answers,
     }
-
-    return response
 
 @router.post("/submit", )
 async def submit_assessment(
