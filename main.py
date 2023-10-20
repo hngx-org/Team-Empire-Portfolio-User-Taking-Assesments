@@ -7,7 +7,7 @@ from brief import summary,docs,description
 
 from app.router import router as assessment_router
 
-v1 = APIRouter(prefix="/api/v1")
+v1 = APIRouter(prefix="/api")
 
 v1.include_router(assessment_router)
 

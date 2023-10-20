@@ -1,7 +1,7 @@
 title = "Assessment API"
 summary="The API handles all Assessment related tasks for the HNGX  Zuri Portfolio Project  "
 version="0.0.1"
-docs="/api/v1"
+docs="/api"
 description = """
 ### Summary
 
