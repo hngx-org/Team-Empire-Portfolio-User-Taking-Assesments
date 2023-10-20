@@ -108,8 +108,8 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
 
     """
 
-    # user = authenticate_user(token=token, permission="assessment.read")
-    user = fake_authenticate_user()
+    user = authenticate_user(token=token, permission="assessment.read")
+    # user = fake_authenticate_user()
 
     assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
 
@@ -119,13 +119,12 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     if not assessments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
 
-    response = {
+
+    return {
         "message": "Assessments fetched successfully",
         "status_code": 200,
         "assessments": assessments
     }
-
-    return response
 
 
 @router.post("/start-assessment",)
