@@ -64,14 +64,13 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
             )
 
             db.add(user_response_instance)
-            db.commit()
-            db.refresh(user_response_instance)
 
         else:
             user_response_instance.answer_id = data.response.user_answer_id
             user_response_instance.selected_response = data.response.answer_text
-            db.commit()
-            db.refresh(user_response_instance)
+
+        db.commit()
+        db.refresh(user_response_instance)
 
         return {
             "message": "Session details saved successfully",
