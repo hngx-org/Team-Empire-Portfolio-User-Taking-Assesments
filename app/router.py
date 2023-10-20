@@ -425,8 +425,8 @@ async def submit_assessment(
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
 
-    if UserAssessmentanswer.is_submitted:
-        if r.cookies.get("assessment"):
+    if r.cookies.get("assessment"):
+        if UserAssessmentanswer.is_submitted:
             # delete cookie
             res.delete_cookie(key="assessment")
 
