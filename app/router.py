@@ -216,18 +216,6 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     if not assessment_questions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found under the assessment_id")
 
-    # question_list = [
-    #     Questions(
-    #         question_id=question.id,
-    #         question_no=question.question_no or 0,
-    #         question_text=question.question_text,
-    #         question_type=question.question_type,
-    #         answer_id=question.answer.id,
-    #         options=question.answer.options
-    #     )
-    #     for question in assessment_questions
-    # ]
-
 
     return {
         "message": "Assessment started successfully",
