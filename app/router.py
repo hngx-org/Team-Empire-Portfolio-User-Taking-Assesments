@@ -3,20 +3,19 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.services.external import (
-        check_for_assessment,
-        fetch_questions,
         fetch_single_assessment,
-        fetch_answered_and_unanswered_questions
+        fetch_answered_and_unanswered_questions,
+        fake_authenticate_user,
+        authenticate_user,
+        fetch_assessment_questions
+
     )
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.assessment import get_assessment_results,get_completed_assessments
-from app.schemas import StartAssessment, UserAssessmentQuery, UserAssessmentanswer
-from app.response_schemas import StartAssessmentResponse, UserAssessmentResponse, Questions,SingleAssessmentResponse
-from app.services.user_session import  save_session,send_email
-from app.config import Permission, settings
-from app.services.external import fake_authenticate_user, authenticate_user, fetch_questions
-from app.response_schemas import AuthenticateUser
-from starlette.responses import RedirectResponse
+from app.schemas import StartAssessment, UserAssessmentanswer
+from app.response_schemas import Questions
+from app.services.user_session import  save_session
+from app.config import settings
 from app.models import UserAssessment
 
 # if settings.ENVIRONMENT == "development":
@@ -108,8 +107,8 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
 
     """
 
-    user = authenticate_user(token=token, permission="assessment.read")
-    # user = fake_authenticate_user()
+    # user = authenticate_user(token=token, permission="assessment.read")
+    user = fake_authenticate_user()
 
     assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
 
@@ -208,64 +207,22 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
 
-    assessment_id = request.assessment_id
-
     #check for assessment to get duration and set cookie
-    assessment_instance,err = check_for_assessment(assessment_id=assessment_id,db=db)
+    assessment_questions, err = fetch_assessment_questions(user_id = user.id,assessment_id=request.assessment_id,db=db, count=False)
 
-    #check for corresponding matching id
     if err:
         raise err
-
-    if not assessment_instance:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-
-
-    #get all questions for the assessment
-    questions_instance,error = fetch_questions(assessment_id=assessment_id,db=db, count=False)
-
-    #check for availability of questions under the assessment_id
-    if error:
-        raise error
-
-    if not questions_instance:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while fetching questions")
-
-    #extract question(id,text type) and append to questions list
-    question_list =[]
-
-    for question in questions_instance:
-        question_list.append(Questions(
-            question_id=question.id,
-            question_no=question.question_no or 0,
-            question_text=question.question_text ,
-            question_type=question.question_type ,
-            answer_id=question.answer.id,
-            options=question.answer.options
-            ))
-
-    is_user_assessment = db.query(UserAssessment).filter(UserAssessment.user_id==user.id,UserAssessment.assessment_id==assessment_id).first()
-
-    if not is_user_assessment:
-        user_assessment = UserAssessment(
-            user_id=user.id,
-            assessment_id=assessment_id,
-            score=0,
-            status="pending",
-            time_spent=0,
-            submission_date=None
-        )
-
-        db.add(user_assessment)
-        db.commit()
-        db.refresh(user_assessment)
+    
+    if not assessment_questions:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found under the assessment_id")
 
 
     return {
         "message": "Assessment started successfully",
         "status_code": 200,
         "data": {
-            "questions": question_list
+            "assessment_id": request.assessment_id,
+            "questions": assessment_questions
         }
     }
 
@@ -592,8 +549,8 @@ def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(
 
 
 
-@router.get("/{skill_id}")
-def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(get_db),):
+@router.get("/{assessment_id}")
+def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depends(get_db),):
     """
     Retrieve assessment details for an assessment.
 
@@ -652,35 +609,16 @@ def get_assessment(skill_id:int, token:str = Header(...),db:Session = Depends(ge
     """
 
     user = authenticate_user(token=token, permission="assessment.read")
-    #edit below to match the right permission
-    single_assessment_instance,error = fetch_single_assessment(skill_id=skill_id,db=db)
+    # user = fake_authenticate_user()
 
-    #check for corresponding errors
-    if error:
-        raise error
-    if not single_assessment_instance:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-
-    question_count, err = fetch_questions(assessment_id=single_assessment_instance.id,db=db, count=True)
+    assessment_details, err = fetch_single_assessment(assessment_id=assessment_id, db=db)
 
     if err:
         raise err
-
-    if not question_count:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Critical error occured while getting assessment details")
-
-    response = {
-        "assessment_id":single_assessment_instance.id,
-        "skill_id": skill_id,
-        "title": single_assessment_instance.title,
-        "description" : single_assessment_instance.description,
-        "duration_minutes" : single_assessment_instance.duration_minutes,
-        "question_count": question_count,
-        "status": single_assessment_instance.status,
-        "start_date": single_assessment_instance.start_date,
-        "end_date": single_assessment_instance.end_date,
-        }
-
-    return response
+    
+    if not assessment_details:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No assessment found for provided assessment_id")
+    
+    return assessment_details
 
 

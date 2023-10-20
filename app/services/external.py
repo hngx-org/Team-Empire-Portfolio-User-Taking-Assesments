@@ -6,6 +6,7 @@ from requests import post
 from app.fake_db_response import UserAssessments,Questions #comment it after testing and grading is done!
 from app.response_schemas import AuthenticateUser
 from app.models import AssessmentCategory, UserResponse, Answer, Assessment
+from app.response_schemas import Questions
 
 def authenticate_user(permission: str,token: str ):
     """
@@ -73,37 +74,9 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
 
     return AuthenticateUser(**data)
 
-def check_for_assessment(assessment_id:str,db:Session):
+def fetch_assessment_questions(user_id, assessment_id: str, count: bool, db: Session):
     """
-        Check for assessment:
-            This function checks for assessment duration_minutes
-        Parameters:
-        - assessment_id : str
-            assessment id of the assessment
-        - db : Session
-            database session
-
-
-        Returns:
-        - check : Assessment
-            returns the Assessment object if there is a match
-        - None : None
-            returns None if there is no match
-
-    """
-    #validate if the assessment_id  corresponds
-    check = db.query(Assessment).filter(Assessment.id==assessment_id).first()
-    if not check :
-        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found for provided assessment_id ")
-    print("check",check)
-    return check,None
-
-
-
-
-def fetch_questions(assessment_id:str, count:bool,db:Session):
-    """
-        Fetch questions:
+        Fetch assessment questions:
             This function fetches the questions under the assessment_id
 
         Parameters:
@@ -118,49 +91,104 @@ def fetch_questions(assessment_id:str, count:bool,db:Session):
         - questions : list
             returns the list of questions under the assessment_id
     """
-    print("assessment_id",assessment_id)
-    # #query for any questions corresponding to the assessment_id and do a join with the answers table
-    questions = db.query(Question).filter(Question.assessment_id==assessment_id)
+    # query for any questions corresponding to the assessment_id and do a join with the answers table
+    query = (
+        db.query(Question)
+        .filter(Question.assessment_id == assessment_id)
+    )
 
     if count:
-        return questions.count(), None
+        return query.count(), None
 
-    questions = questions.all()
+    questions = [
+        Questions(
+            question_id=question.id,
+            question_no=question.question_no or 0,
+            question_text=question.question_text,
+            question_type=question.question_type,
+            answer_id=question.answer.id,
+            options=question.answer.options,
+        )
+        for question in query.all()
+    ]
+
+    is_user_assessment = (
+        db.query(UserAssessment)
+        .filter(
+            UserAssessment.user_id == user_id,
+            UserAssessment.assessment_id == assessment_id,
+            UserAssessment.status == "pending",
+        )
+        .first()
+    )
+
+    if not is_user_assessment:
+        user_assessment = UserAssessment(
+            user_id=user_id,
+            assessment_id=assessment_id,
+            score=0,
+            status="pending",
+            time_spent=0,
+            submission_date=None,
+        )
+        db.add(user_assessment)
+        db.commit()
+        db.refresh(user_assessment)
 
     if not questions:
-        #for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+        return None, HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No questions found under the assessment_id",
+        )
+
     return questions, None
 
 
-
-def fetch_single_assessment(skill_id:str,db:Session):
+def fetch_single_assessment( assessment_id: int, db: Session):
     """
-        Get  single assessment :
-            This function gets a single assessment details if the skill_id is present in the userAssessment database
+    Fetch assessment:
+        This function fetches the assessment details
 
-        Parameters:
-        - skill_id : str
-            skill id of the user
-        - db : Session
-            database session
+    Parameters:
+    - skill_id : str
+        skill id of the assessment
+    - assessment_id : str
+        assessment id of the assessment
+    - db : Session
+        database session
 
-
-        Returns:
-        - check : UserAssessment
-            returns the UserAssessment object if there is a match
-        - None : None
-            returns None if there is no match
-
+    Returns:
+    - assessment_details : dict
+        Dictionary containing the assessment details
     """
-    #query for assessment that the user has not taken
-    assessment_details = db.query(Assessment).filter(Assessment.skill_id==skill_id).first()
+    assessment = (
+        db.query(Assessment)
+        .filter(Assessment.id == assessment_id)
+        .first()
+    )
 
-    if not assessment_details :
-        return None,HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No assessment found")
+    if not assessment:
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
-    return assessment_details,None
+    question_count = (
+        db.query(Question)
+        .filter(Question.assessment_id == assessment.id)
+        .count()
+    )
+
+    assessment_details = {
+        "assessment_id": assessment.id,
+        "skill_id": assessment.skill_id,
+        "title": assessment.title,
+        "description": assessment.description,
+        "duration_minutes": assessment.duration_minutes,
+        "question_count": question_count,
+        "status": assessment.status,
+        "start_date": assessment.start_date,
+        "end_date": assessment.end_date,
+    }
+
+    return assessment_details, None
 
 def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Session):
     """
