@@ -140,7 +140,6 @@ def assign_badge( assessment_id, token):
 
     if req.status_code != 201:
         raise HTTPException(status_code=req.status_code, detail="Error assigning badge")
-    if req.status_code == 201:
-        return req.json()['data']['badge']['id']
+    return req.json()['data']['badge']['id']
     
     
