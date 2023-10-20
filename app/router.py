@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header
 from sqlalchemy.orm import Session
-from typing import List
 from app.database import get_db
 from app.services.external import (
         fetch_single_assessment,
@@ -11,14 +10,14 @@ from app.services.external import (
 
     )
 from app.services.user_assessment import get_user_assessments_from_db
-from app.services.assessment import get_assessment_results,get_completed_assessments
+from app.services.assessment import get_completed_assessments
 from app.schemas import StartAssessment, UserAssessmentanswer
 from app.response_schemas import Questions
 from app.services.user_session import  save_session
 from app.config import settings
-from app.models import UserAssessment, Assessment
+from app.models import  Assessment
 import time
-from starlette.responses import RedirectResponse
+
 
 # if settings.ENVIRONMENT == "development":
 #     authenticate_user = fake_authenticate_user
@@ -372,71 +371,7 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
         }
     }
 
-@router.get("/{assessment_id}/result", status_code=200)
-async def get_assessment_result(
-    assessment_id: int,
-    token:str = Header(...),
-    db: Session = Depends(get_db),
 
-):
-    """
-    Retrieve assessment results for a user.
-
-    Method: GET
-    Request: User ID, Assessment ID
-
-    Response:
-
-        - score: Score of the assessment
-        - status: Status of the assessment
-        - answers: List of answers submitted by the user
-
-    Error Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
-
-    Example request:
-
-            curl -X GET "http://localhost:8000/api/assessments/1/result?user_id=1" -H  "accept: application/json"
-
-    Example response:
-
-            {
-            "score": 0.0,
-            "status": "in_progress",
-            "answers": []
-            }
-
-    Error response:
-
-            {
-            "message": "Assessment does not exist",
-            "status_code": 404
-            }
-
-    Error response:
-
-            {
-            "message": "User does not exist",
-            "status_code": 404
-            }
-
-
-    """
-    user = authenticate_user(token=token, permission="assessment.read")
-
-    score, assessment_status, answers = get_assessment_results(user_id=user.id, assessment_id=assessment_id, db=db)
-
-    response = {
-        "score": score,
-        "user_id": user.id,
-        "assessment_id": assessment_id,
-        "status": assessment_status,
-        "answers": answers
-    }
-
-    return response
 
 @router.post("/submit", )
 async def submit_assessment(
