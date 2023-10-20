@@ -238,8 +238,6 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
             for q in questions:
                 if q_ans.question_id == q.id:
                     questions.remove(q)
-
-    answered_questions = answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id).all()
             
                     
     return questions, answered_questions, None

@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header,BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header
 from sqlalchemy.orm import Session
-from typing import List
 from app.database import get_db
 from app.services.external import (
         fetch_single_assessment,
@@ -11,12 +10,14 @@ from app.services.external import (
 
     )
 from app.services.user_assessment import get_user_assessments_from_db
-from app.services.assessment import get_assessment_results,get_completed_assessments
+from app.services.assessment import get_completed_assessments
 from app.schemas import StartAssessment, UserAssessmentanswer
 from app.response_schemas import Questions
 from app.services.user_session import  save_session
 from app.config import settings
-from app.models import UserAssessment
+from app.models import  Assessment
+import time
+
 
 # if settings.ENVIRONMENT == "development":
 #     authenticate_user = fake_authenticate_user
@@ -107,8 +108,8 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
 
     """
 
-    # user = authenticate_user(token=token, permission="assessment.read")
-    user = fake_authenticate_user()
+    user = authenticate_user(token=token, permission="assessment.read")
+    # user = fake_authenticate_user()
 
     assessments, err = get_user_assessments_from_db(user_id=user.id, db=db)
 
@@ -118,17 +119,16 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
     if not assessments:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
 
-    response = {
+
+    return {
         "message": "Assessments fetched successfully",
         "status_code": 200,
         "assessments": assessments
     }
 
-    return response
-
 
 @router.post("/start-assessment",)
-async def start_assessment( request:StartAssessment,response:Response, token:str = Header(...), db:Session = Depends(get_db),):
+async def start_assessment( request:StartAssessment,response:Response, r:Request,token:str = Header(...), db:Session = Depends(get_db),):
     '''
     Start an assessment for a user.
 
@@ -207,6 +207,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
 
+    skill_id = db.query(Assessment.skill_id).filter(Assessment.id == request.assessment_id).first()
+
     #check for assessment to get duration and set cookie
     assessment_questions, err = fetch_assessment_questions(user_id = user.id,assessment_id=request.assessment_id,db=db, count=False)
 
@@ -215,6 +217,12 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     
     if not assessment_questions:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found under the assessment_id")
+
+    assessment_instance = db.query(Assessment).filter(Assessment.id == request.assessment_id).first()
+
+    duration = assessment_instance.duration_minutes
+
+    response.set_cookie(key="assessment", value=str(request.assessment_id), max_age=time.time() + duration*60, httponly=True)
 
 
     return {
@@ -227,8 +235,8 @@ async def start_assessment( request:StartAssessment,response:Response, token:str
     }
 
 
-@router.get("/session/{assessment_id}")
-async def get_session_details(assessment_id:int, response:Request,token:str = Header(...),db:Session = Depends(get_db),):
+@router.get("/session")
+async def get_session_details(req:Request,token:str = Header(...),db:Session = Depends(get_db),):
     """
     Retrieve session details for a user.
 
@@ -310,7 +318,13 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
     # user = fake_authenticate_user()
     #get assessment id from cookie
 
+    assessment_id = req.cookies.get("assessment")
+    if not assessment_id:
 
+        return {"url":f"{settings.FRONTEND_URL}/assessments/dashboard",
+                "status_code":302,
+                "message":"Assessment already started"
+                }
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
 
@@ -356,75 +370,11 @@ async def get_session_details(assessment_id:int, response:Request,token:str = He
         }
     }
 
-@router.get("/{assessment_id}/result", status_code=200)
-async def get_assessment_result(
-    assessment_id: int,
-    token:str = Header(...),
-    db: Session = Depends(get_db),
 
-):
-    """
-    Retrieve assessment results for a user.
-
-    Method: GET
-    Request: User ID, Assessment ID
-
-    Response:
-
-        - score: Score of the assessment
-        - status: Status of the assessment
-        - answers: List of answers submitted by the user
-
-    Error Response:
-
-            - message: Message indicating the status of the request
-            - status_code: Status code of the request
-
-    Example request:
-
-            curl -X GET "http://localhost:8000/api/assessments/1/result?user_id=1" -H  "accept: application/json"
-
-    Example response:
-
-            {
-            "score": 0.0,
-            "status": "in_progress",
-            "answers": []
-            }
-
-    Error response:
-
-            {
-            "message": "Assessment does not exist",
-            "status_code": 404
-            }
-
-    Error response:
-
-            {
-            "message": "User does not exist",
-            "status_code": 404
-            }
-
-
-    """
-    user = authenticate_user(token=token, permission="assessment.read")
-
-    score, assessment_status, answers = get_assessment_results(user_id=user.id, assessment_id=assessment_id, db=db)
-
-    response = {
-        "score": score,
-        "user_id": user.id,
-        "assessment_id": assessment_id,
-        "status": assessment_status,
-        "answers": answers
-    }
-
-    return response
 
 @router.post("/submit", )
 async def submit_assessment(
-    background_task:BackgroundTasks,response:UserAssessmentanswer, db: Session = Depends(get_db),token:str = Header(...)
+    req:UserAssessmentanswer,res:Response,r:Request, db: Session = Depends(get_db),token:str = Header(...)
 ):
     """
     Submit an assessment for a user.
@@ -475,7 +425,12 @@ async def submit_assessment(
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
 
-    return save_session(response, user.id,db=db, background_task=background_task, token= token)
+    if r.cookies.get("assessment"):
+        if UserAssessmentanswer.is_submitted:
+            # delete cookie
+            res.delete_cookie(key="assessment")
+
+    return save_session(req, user.id,db=db, token= token)
 
 
 
