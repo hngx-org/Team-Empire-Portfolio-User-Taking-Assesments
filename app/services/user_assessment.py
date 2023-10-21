@@ -29,7 +29,11 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     if not user_track:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No track found for this user")
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": "No user track found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
 
     # Get all assessments for the user's skill category
     assessments = (
@@ -42,7 +46,11 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     if not assessments:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No assessments found for this user")
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": "No assessments found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
 
     # Get user assessments
     user_assessments = (
@@ -52,7 +60,7 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     # Create a set of assessment ids that the user has taken
-    taken_assessment_ids = set(ua.assessment_id for ua in user_assessments)
+    taken_assessment_ids = {ua.assessment_id for ua in user_assessments}
 
     # Add a "taken" attribute to each assessment object
     for assessment in assessments:

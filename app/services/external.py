@@ -28,14 +28,21 @@ def authenticate_user(permission: str,token: str ):
         f"{settings.AUTH_SERVICE}",
         headers={},
         data={"token": token, "permission":permission}).json()
-    print(request)
 
 
     if request.get("status") == 401:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
+                "message": "Unauthorized",
+                "status_code": status.HTTP_401_UNAUTHORIZED,
+                "data":{}
+            })
 
     if request.get("status") != 200:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to authorize user")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={
+                "message": "unable to authenticate user",
+                "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "data":{}
+            })
 
     if Permission.check_permission(request.get("user").get("permissions"), permission):
 
@@ -45,7 +52,12 @@ def authenticate_user(permission: str,token: str ):
         }
 
         return AuthenticateUser(**data)
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="UNKNOWN PERMISSION")
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={
+        "message": "Unknow permission",
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "data":{}
+        }
+    )
 
 
 # create a function that has a fixed token for testing
@@ -138,7 +150,11 @@ def fetch_assessment_questions(user_id, assessment_id: str, count: bool, db: Ses
     if not questions:
         return None, HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No questions found under the assessment_id",
+            detail={
+                "message": "No questions found under the assessment_id",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": {},
+            },
         )
 
     return questions, None
@@ -168,7 +184,11 @@ def fetch_single_assessment( assessment_id: int, db: Session):
     )
 
     if not assessment:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
+        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": "No assessment found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
 
     question_count = (
         db.query(Question)
@@ -221,7 +241,11 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
     if not user_assement_instance:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
-        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": err_message,
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
     
 
     #query for any questions corresponding to the assessment_id
@@ -229,7 +253,11 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
     if not questions:
         #for any reason if  there are no questions return false
         err_message = "No questions found under the assessment_id"
-        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=err_message)
+        return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": err_message,
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
 
 
     answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id)
