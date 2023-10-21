@@ -60,7 +60,7 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     # Create a set of assessment ids that the user has taken
-    taken_assessment_ids = set(ua.assessment_id for ua in user_assessments)
+    taken_assessment_ids = {ua.assessment_id for ua in user_assessments}
 
     # Add a "taken" attribute to each assessment object
     for assessment in assessments:
