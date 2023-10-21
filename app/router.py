@@ -347,29 +347,31 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
 
     if answered_question != []:
 
-        for question in answered_question:
-            answered_question_list.append(Questions(
+        answered_question_list.extend(
+            Questions(
                 question_id=question.question_id,
                 question_no=question.question.question_no,
                 question_text=question.question.question_text,
                 question_type=question.question.question_type,
                 answer_id=question.answer_id or 0,
                 options=question.answer.options,
-                user_selected_answer= question.selected_response,
-                ))
-
+                user_selected_answer=question.selected_response,
+            )
+            for question in answered_question
+        )
     if unanswered_question != []:
 
-        for question in unanswered_question:
-            unanswered_question_list.append(Questions(
+        unanswered_question_list.extend(
+            Questions(
                 question_id=question.id,
                 question_no=question.question_no or 0,
                 question_text=question.question_text,
                 question_type=question.question_type,
                 answer_id=question.answer.id,
-                options=question.answer.options
-                ))
-
+                options=question.answer.options,
+            )
+            for question in unanswered_question
+        )
     return {
         "message": "Session details fetched successfully",
         "status_code": 200,
@@ -429,12 +431,8 @@ async def submit_assessment(
 
     """
     user = authenticate_user(token=token, permission="assessment.update.own")
-    # user = fake_authenticate_user()
-
-    # check if user is eligible to submit assessment at first if required
-    # user_id comes from auth
-    if req.is_submitted:
-        if r.cookies.get("assessment"):
+    if r.cookies.get("assessment"):
+        if req.is_submitted:
             # delete cookie
             res.delete_cookie(key="assessment")
 
