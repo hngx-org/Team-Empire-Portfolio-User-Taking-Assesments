@@ -117,13 +117,17 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
         raise err
 
     if not assessments:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="failed to fetch assessments")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": "No assessments found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
 
 
     return {
         "message": "Assessments fetched successfully",
         "status_code": 200,
-        "assessments": assessments
+        "data": assessments
     }
 
 
@@ -213,10 +217,14 @@ async def start_assessment( request:StartAssessment,response:Response, r:Request
     assessment_questions, err = fetch_assessment_questions(user_id = user.id,assessment_id=request.assessment_id,db=db, count=False)
 
     if err:
-        raise err
+        return err
     
     if not assessment_questions:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No questions found under the assessment_id")
+        return {
+            "message": "No questions found under the assessment_id",
+            "status_code": 404,
+            "data": {}
+        }
 
     assessment_instance = db.query(Assessment).filter(Assessment.id == request.assessment_id).first()
 
@@ -321,9 +329,10 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
     assessment_id = req.cookies.get("assessment")
     if not assessment_id:
 
-        return {"url":f"{settings.FRONTEND_URL}/assessments/dashboard",
+        return {
+                "message":"Assessment already started",
                 "status_code":302,
-                "message":"Assessment already started"
+                "data":{"url":f"{settings.FRONTEND_URL}/assessments/dashboard"}
                 }
 
     unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
@@ -424,9 +433,8 @@ async def submit_assessment(
 
     # check if user is eligible to submit assessment at first if required
     # user_id comes from auth
-
-    if r.cookies.get("assessment"):
-        if UserAssessmentanswer.is_submitted:
+    if req.is_submitted:
+        if r.cookies.get("assessment"):
             # delete cookie
             res.delete_cookie(key="assessment")
 
@@ -498,7 +506,11 @@ def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(
     completed_assessments,error=get_completed_assessments(user.id,db=db)
     if error:
         raise error
-    return completed_assessments
+    return {
+        "message": "Completed assessments fetched successfully",
+        "status_code": 200,
+        "data": completed_assessments
+    }
 
 
 
@@ -572,8 +584,16 @@ def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depen
         raise err
     
     if not assessment_details:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No assessment found for provided assessment_id")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+                "message": "No assessment found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data":{}
+            })
     
-    return assessment_details
+    return {
+        "message": "Assessment details fetched successfully",
+        "status_code": status.HTTP_200_OK,
+        "data": assessment_details
+    }
 
 

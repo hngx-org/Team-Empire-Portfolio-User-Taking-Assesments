@@ -9,7 +9,11 @@ from app.models import UserAssessment
 def get_completed_assessments(user_id,db:Session):
     completed_assessments=db.query(UserAssessment).filter(UserAssessment.user_id==user_id,UserAssessment.status=='complete').all()
     if completed_assessments==[]:
-        return None,HTTPException(status_code=404,detail="no assessment found")
+        return None,HTTPException(status_code=404,detail={
+            "message":"No completed assessments found",
+            "status_code":404,
+            "data":{}
+        })
 
     response=[]
 
