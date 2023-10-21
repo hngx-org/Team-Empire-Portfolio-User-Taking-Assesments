@@ -11,24 +11,28 @@ def get_completed_assessments(user_id,db:Session):
     if completed_assessments==[]:
         return None,HTTPException(status_code=404,detail="no assessment found")
 
-    response=[]
-
-    for assessment in completed_assessments:
-        response.extend(
-            [
-                {
-            "id":assessment.id,
-            "user_id":assessment.user_id,
-            "assessment_id":assessment.assessment_id,
-            "score":assessment.score,
-            "status":assessment.status,
-            "submission_date":assessment.submission_date,
-            "skill_id":assessment.user_badge[0].skill_badge.skill_id if assessment.user_badge else None,
-            "assessment_name":assessment.assessment.title if assessment.assessment else None,
-            "badge_id":assessment.user_badge[0].id if assessment.user_badge else None,
-            "badge_name":assessment.user_badge[0].skill_badge.name if assessment.user_badge else None,
+    response = [
+        {
+            "id": assessment.id,
+            "user_id": assessment.user_id,
+            "assessment_id": assessment.assessment_id,
+            "score": assessment.score,
+            "status": assessment.status,
+            "submission_date": assessment.submission_date,
+            "skill_id": assessment.user_badge[0].skill_badge.skill_id
+            if assessment.user_badge
+            else None,
+            "assessment_name": assessment.assessment.title
+            if assessment.assessment
+            else None,
+            "badge_id": assessment.user_badge[0].id
+            if assessment.user_badge
+            else None,
+            "badge_name": assessment.user_badge[0].skill_badge.name
+            if assessment.user_badge
+            else None,
         }
-            ]
-        )
+        for assessment in completed_assessments
+    ]
     return response,None
 
