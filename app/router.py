@@ -230,7 +230,14 @@ async def start_assessment( request:StartAssessment,response:Response, r:Request
 
     duration = assessment_instance.duration_minutes
 
-    response.set_cookie(key="assessment", value=str(request.assessment_id), max_age=time.time() + duration*60, httponly=True)
+    response.set_cookie(
+        key="assessment", 
+        value=str(request.assessment_id), 
+        max_age=time.time() + duration*60, 
+        httponly=True, 
+        secure=True, 
+        samesite='none'
+        )
 
 
     return {
