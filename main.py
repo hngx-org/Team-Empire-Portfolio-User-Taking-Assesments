@@ -13,16 +13,14 @@ v1.include_router(assessment_router)
 
 app = FastAPI(title="Assessment API", version="0.1.0",summary=summary,description=description, docs_url=docs)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "*",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=['http://localhost:3000', settings.FRONTEND_URL],
+  allow_credentials=True,
+  allow_methods=["GET", "POST", "OPTIONS"], 
+  allow_headers=["Content-Type","Set-Cookie"],
+)
 
 app.include_router(v1)
 
