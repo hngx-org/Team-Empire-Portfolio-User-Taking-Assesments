@@ -28,14 +28,14 @@ def authenticate_user(permission: str,token: str ):
         f"{settings.AUTH_SERVICE}",
         headers={},
         data={"token": token, "permission":permission}).json()
-
+    print(request)
 
 
     if request.get("status") == 401:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     if request.get("status") != 200:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unable to authorize user")
 
     if Permission.check_permission(request.get("user").get("permissions"), permission):
 
