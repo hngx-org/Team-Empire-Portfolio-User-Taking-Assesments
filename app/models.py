@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, text,BOOLEAN
+from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text,BOOLEAN
 from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
@@ -188,7 +188,6 @@ class Assessment(BaseModel):
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True), nullable=False)
     is_published = Column(BOOLEAN,nullable=False, default=False)
-
     user_assessment = relationship("UserAssessment", back_populates="assessment")
     skill = relationship("Skill", back_populates="assessment")
     assessment_category = relationship(
