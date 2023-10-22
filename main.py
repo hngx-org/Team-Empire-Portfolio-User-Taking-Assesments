@@ -25,7 +25,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["Content-Type", "Set-Cookie"],
+    allow_headers=["*"],
 )
 
 app.include_router(v1)
