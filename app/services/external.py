@@ -79,12 +79,12 @@ def fake_authenticate_user(fake_token: str ="l3h5.34jb3,4mh346gv,34h63vk3j4h5k43
     if fake_token != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
-    data = {
+    user_data = {
         "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": ["assessment.create", "assessment.read", "assessment.update.own", "assessment.update.all", "assessment.delete.own", "assessment.delete.all"]
     }
 
-    return AuthenticateUser(**data)
+    return AuthenticateUser(**user_data)
 
 def fetch_assessment_questions(user_id, assessment_id: str, count: bool, db: Session):
     """
@@ -237,12 +237,12 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
             returns HTTPException if there is no match
     """
     #query for any questions corresponding to the assessment_id
-    user_assement_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id, UserAssessment.status == "pending").first()
-    if not user_assement_instance:
+    user_assessment_instance = db.query(UserAssessment).filter(UserAssessment.assessment_id==assessment_id, UserAssessment.user_id==user_id, UserAssessment.status == "pending").first()
+    if not user_assessment_instance:
         #for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
+        error_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
-                "message": err_message,
+                "message": error_message,
                 "status_code": status.HTTP_404_NOT_FOUND,
                 "data":{}
             })
@@ -252,15 +252,15 @@ def fetch_answered_and_unanswered_questions(assessment_id:str, user_id:str,db:Se
     questions = db.query(Question).filter(Question.assessment_id==assessment_id).all()
     if not questions:
         #for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
+        error_message = "No questions found under the assessment_id"
         return None, None,HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
-                "message": err_message,
+                "message": error_message,
                 "status_code": status.HTTP_404_NOT_FOUND,
                 "data":{}
             })
 
 
-    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assement_instance.id)
+    answered_questions = db.query(UserResponse).filter(UserResponse.user_assessment_id==user_assessment_instance.id)
     if answered_questions != []:
         for q_ans in answered_questions.all():
             for q in questions:

@@ -583,10 +583,10 @@ def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depen
     user = authenticate_user(token=token, permission="assessment.read")
     # user = fake_authenticate_user()
 
-    assessment_details, err = fetch_single_assessment(assessment_id=assessment_id, db=db)
+    assessment_details, error = fetch_single_assessment(assessment_id=assessment_id, db=db)
 
-    if err:
-        raise err
+    if error:
+        raise error
     
     if not assessment_details:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={

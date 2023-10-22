@@ -89,7 +89,7 @@ Method:GET
 | Parameter | Type     | Description                       |
 | :-------- | :------- | :-------------------------------- |
 | `token`      | `string` | **Required**. *header param* |
-| `skill_id` | `string` | **Required**. *path param* |
+| `assessment_id` | `string` | **Required**. *path param* |
 
 </details>
 
