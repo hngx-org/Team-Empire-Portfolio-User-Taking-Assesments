@@ -1,7 +1,8 @@
+from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from app.models import Question, Assessment, Track, UserTrack, Skill, UserAssessment
+
+from app.models import Assessment, Question, Skill, Track, UserAssessment, UserTrack
 
 
 def get_user_assessments_from_db(user_id: str, db: Session):
@@ -18,7 +19,7 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     Returns:
     - assessments : List[Assessment]
         list of Assessment objects a user can take
-        
+
     """
     user_track = (
         db.query(UserTrack, Track, Skill)
@@ -29,11 +30,14 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     if not user_track:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+        return None, HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
                 "message": "No user track found",
                 "status_code": status.HTTP_404_NOT_FOUND,
-                "data":{}
-            })
+                "data": {},
+            },
+        )
 
     # Get all assessments for the user's skill category
     assessments = (
@@ -46,17 +50,18 @@ def get_user_assessments_from_db(user_id: str, db: Session):
     )
 
     if not assessments:
-        return None, HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+        return None, HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
                 "message": "No assessments found",
                 "status_code": status.HTTP_404_NOT_FOUND,
-                "data":{}
-            })
+                "data": {},
+            },
+        )
 
     # Get user assessments
     user_assessments = (
-        db.query(UserAssessment)
-        .filter(UserAssessment.user_id == user_id)
-        .all()
+        db.query(UserAssessment).filter(UserAssessment.user_id == user_id).all()
     )
 
     # Create a set of assessment ids that the user has taken
