@@ -114,7 +114,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
             "badge_id": badge_id,
             "assessment_id": user_assessment_instance.assessment_id,
         }
-    
+
 
 def send_email(user_id,db:Session):
     # get user email and name
@@ -122,7 +122,7 @@ def send_email(user_id,db:Session):
     email_payload={
         "recipient":user.email,
         "name":f'{user.first_name} {user.last_name}',
-        "service":"Taking Assessment",
+        "service":"User Taking Assessment",
         "call_to_action_link":"https://example.com"
     }
     response=requests.post(settings.MESSAGING,data=json.dumps(email_payload))
@@ -132,14 +132,13 @@ def send_email(user_id,db:Session):
 
 def assign_badge( assessment_id, token):
 
-    req = requests.post(
+    assign_req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={"Authorization": f"Bearer {token}"},
         data=json.dumps({"assessment_id": int(assessment_id)})
     )
 
-    if req.status_code != 201:
+    if assign_req.status_code != 201:
         raise HTTPException(status_code=req.status_code, detail="Error assigning badge")
     return req.json()['data']['badge']['id']
-    
-    
+
