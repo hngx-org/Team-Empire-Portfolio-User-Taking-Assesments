@@ -27,26 +27,27 @@ def get_db_engine():
 
     """
     db_type = settings.DB_TYPE
-    db_name = settings.DB_NAME
-    db_user = settings.DB_USER
-    db_password = settings.DB_PASSWORD
-    db_host = settings.DB_HOST
-    db_port = settings.DB_PORT
-
     database_url = "sqlite:///./database.db"
 
     if db_type == "postgresql":
+        db_name = settings.DB_NAME
+        db_user = settings.DB_USER
+        db_password = settings.DB_PASSWORD
+        db_host = settings.DB_HOST
+        db_port = settings.DB_PORT
+
         database_url = (
             f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         )
 
-    else:
+        return create_engine(database_url)
+    elif db_type == "sqlite":
         database_url = "sqlite:///./database.db"
 
-    if db_type == "sqlite":
         return create_engine(database_url, connect_args={"check_same_thread": False})
 
-    return create_engine(database_url)
+    else:
+        return create_engine("sqlite:///./database.db")
 
 
 db_engine = get_db_engine()
@@ -92,6 +93,4 @@ def get_db_unyield():
         It is used mainly for writing to the database externally
         from the entire application.
     """
-    # create_database()
-    db = SessionLocal()
-    return db
+    return SessionLocal()

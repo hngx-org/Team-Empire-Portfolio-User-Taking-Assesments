@@ -143,7 +143,7 @@ def assign_badge(assessment_id: int, token: str):
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={"Authorization": f"Bearer {token}"},
-        data=json.dumps({"assessment_id": int(assessment_id)}),
+        data=json.dumps({"assessment_id": assessment_id}),
     )
 
     if req.status_code != 201:
