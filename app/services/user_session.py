@@ -6,7 +6,6 @@ from app.response_schemas import Response
 import requests
 import json
 from app.config import settings
-from fastapi import BackgroundTasks
 from datetime import datetime as time
 
 # save session details
@@ -42,7 +41,11 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
     if not user_assessment_instance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="There is no match for user_id or assessment_id"
+            detail={
+                "message": "No pending assessment found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": {}
+            }
         )
 
     if not data.is_submitted and data.time_spent is None:
@@ -74,7 +77,8 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
 
         return {
             "message": "Session details saved successfully",
-            "status_code": status.HTTP_200_OK
+            "status_code": status.HTTP_200_OK,
+            "data": {}
         }
 
     else:
@@ -110,9 +114,11 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
         return {
             "message": "Submission and grading successful",
             "status_code": status.HTTP_200_OK,
-            "score": score,
-            "badge_id": badge_id,
-            "assessment_id": user_assessment_instance.assessment_id,
+            "data": {
+                "score": score,
+                "badge_id": badge_id,
+                "assessment_id": user_assessment_instance.assessment_id,
+            }
         }
 
 
@@ -138,7 +144,11 @@ def assign_badge( assessment_id, token):
         data=json.dumps({"assessment_id": int(assessment_id)})
     )
 
-    if assign_req.status_code != 201:
-        raise HTTPException(status_code=req.status_code, detail="Error assigning badge")
+    if req.status_code != 201:
+        raise HTTPException(status_code=req.status_code, detail={
+            "message": "Badge assignment failed",
+            "status_code": req.status_code,
+            "data": {}
+        })
     return req.json()['data']['badge']['id']
 
