@@ -1,21 +1,26 @@
-from pydantic import BaseModel
-from typing import Text, List, Optional, Union
-from uuid import UUID
 from enum import Enum
+from typing import List, Optional, Union
+from uuid import UUID
+
+from pydantic import BaseModel
+
 
 class AssessmentAnswers(BaseModel):
-    question_text : str 
+    question_text: str
     answer_text: str
-    
+
+
 class STATUS(Enum):
     pending = "pending"
     complete = "complete"
     failed = "failed"
 
+
 class BADGES(Enum):
     beginner = "beginner"
     intermediate = "intermediate"
     expert = "expert"
+
 
 # User schema
 class UserBase(BaseModel):
@@ -33,10 +38,10 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: UUID
     provider: Optional[str] = None
-    section_order: Optional[Text] = None
+    section_order: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
-    profile_pic: Optional[Text] = None
+    profile_pic: Optional[str] = None
     refresh_token: Optional[str] = None
     user_assessment: List["UserAssessment"] = []
     user_badge: List["UserBadge"] = []
@@ -44,10 +49,12 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+
 # UserAssessment schema
 class UserAssessmentBase(BaseModel):
     score: float
     status: STATUS
+
 
 class UserAssessmentCreate(UserAssessmentBase):
     pass
@@ -65,6 +72,7 @@ class UserAssessment(UserAssessmentBase):
 
     class Config:
         from_attributes = True
+
 
 # User Badge
 class UserBadgeBase(BaseModel):
@@ -85,13 +93,14 @@ class UserBadge(UserBadgeBase):
     class Config:
         from_attributes = True
 
+
 # Skill badge schema
 
 
 class SkillBadgeBase(BaseModel):
     skill_id: int
     name: BADGES
-    badge_image: Text
+    badge_image: str
     min_score: float
     max_score: float
 
@@ -108,12 +117,13 @@ class SkillBadge(SkillBadgeBase):
     class Config:
         from_attributes = True
 
+
 # Assessment schema
 
 
 class AssessmentBase(BaseModel):
     title: str
-    description: Text
+    description: str
     pass_score: float
 
 
@@ -133,12 +143,13 @@ class Assessment(AssessmentBase):
     class Config:
         from_attributes = True
 
+
 # Skill schema
 
 
 class SkillBase(BaseModel):
     category_name: str
-    description: Text
+    description: str
 
 
 class SkillCreate(SkillBase):
@@ -153,6 +164,7 @@ class Skill(SkillBase):
 
     class Config:
         from_attributes = True
+
 
 # UserResponse schema
 
@@ -174,6 +186,7 @@ class UserResponse(UserResponseBase):
     class Config:
         from_attributes = True
 
+
 # UserAssessmentProgress schema
 
 
@@ -193,12 +206,13 @@ class UserAssessmentProgress(UserAssessmentProgressBase):
     class Config:
         from_attributes = True
 
+
 # Question schema
 
 
 class QuestionBase(BaseModel):
     assessment_id: int
-    question_text: Text
+    question_text: str
     question_type: str
 
 
@@ -216,12 +230,13 @@ class Question(QuestionBase):
     class Config:
         from_attributes = True
 
+
 # Answer schema
 
 
 class AnswerBase(BaseModel):
     question_id: int
-    answer_text: Text
+    answer_text: str
     is_correct: bool
 
 
@@ -240,23 +255,22 @@ class Answer(AnswerBase):
 
 # Query fields
 class StartAssessment(BaseModel):
-    #user_id: str #the user id will henceforth be extracted from header token
-    assessment_id:int
+    # user_id: str #the user id will henceforth be extracted from header token
+    assessment_id: int
+
 
 class UserAssessmentQuery(BaseModel):
     user_id: str
 
 
-class userResponse(BaseModel):
+class UserResponse(BaseModel):
     question_id: int = None
     user_answer_id: int = None
-    answer_text:str = None
+    answer_text: str = None
+
 
 class UserAssessmentanswer(BaseModel):
     assessment_id: int
-    is_submitted: bool = False 
+    is_submitted: bool = False
     time_spent: Union[int, None] = None
-    response: Union[userResponse, None]= None
-    
-
-
+    response: Union[UserResponse, None] = None

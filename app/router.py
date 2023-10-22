@@ -1,23 +1,22 @@
-from fastapi import APIRouter, HTTPException, status, Depends,Request, Response, Header
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.services.external import (
-        fetch_single_assessment,
-        fetch_answered_and_unanswered_questions,
-        fake_authenticate_user,
-        authenticate_user,
-        fetch_assessment_questions
-
-    )
-from app.services.user_assessment import get_user_assessments_from_db
-from app.services.assessment import get_completed_assessments
-from app.schemas import StartAssessment, UserAssessmentanswer
-from app.response_schemas import Questions
-from app.services.user_session import  save_session
-from app.config import settings
-from app.models import  Assessment
 import time
 
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from sqlalchemy.orm import Session
+
+from app.config import settings
+from app.database import get_db
+from app.models import Assessment
+from app.response_schemas import Questions
+from app.schemas import StartAssessment, UserAssessmentanswer
+from app.services.assessment import get_completed_assessments
+from app.services.external import (
+    authenticate_user,
+    fetch_answered_and_unanswered_questions,
+    fetch_assessment_questions,
+    fetch_single_assessment,
+)
+from app.services.user_assessment import get_user_assessments_from_db
+from app.services.user_session import save_session
 
 # if settings.ENVIRONMENT == "development":
 #     authenticate_user = fake_authenticate_user
@@ -26,8 +25,10 @@ import time
 router = APIRouter(tags=["Assessments"], prefix="/assessments")
 
 
-@router.get("" )
-async def get_all_user_assessments(token:str = Header(...), db: Session = Depends(get_db)):
+@router.get("")
+async def get_all_user_assessments(
+    token: str = Header(...), db: Session = Depends(get_db)
+):
     """
     Retrieve all assessments for a user.
 
@@ -46,8 +47,9 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
             - status_code: Status code of the request
 
     Example request:
-    
-                curl -X GET "http://localhost:8000/api/assessments" -H  "accept: application/json"  
+
+                curl -X GET "http://localhost:8000/api/assessments" -H  \
+                    "accept: application/json"
 
     Example response:
 
@@ -86,7 +88,7 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
             }
 
     Error response:
-    
+
             {
             "detail": "No track found for this user",
             "status_code": 404
@@ -100,7 +102,7 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
             }
 
     Error response:
-    
+
             {
             "detail": "failed to fetch assessments",
             "status_code": 500
@@ -117,42 +119,53 @@ async def get_all_user_assessments(token:str = Header(...), db: Session = Depend
         raise err
 
     if not assessments:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
                 "message": "No assessments found",
                 "status_code": status.HTTP_404_NOT_FOUND,
-                "data":{}
-            })
-
+                "data": {},
+            },
+        )
 
     return {
         "message": "Assessments fetched successfully",
         "status_code": 200,
-        "data": assessments
+        "data": assessments,
     }
 
 
-@router.post("/start-assessment",)
-async def start_assessment( request:StartAssessment,response:Response, r:Request,token:str = Header(...), db:Session = Depends(get_db),):
-    '''
+@router.post(
+    "/start-assessment",
+)
+async def start_assessment(
+    request: StartAssessment,
+    response: Response,
+    r: Request,
+    token: str = Header(...),
+    db: Session = Depends(get_db),
+):
+    """
     Start an assessment for a user.
 
     Method: POST
     Request_body: token, assessment_id
 
     Response:
-    
+
                 - message: Message indicating the status of the request
                 - status_code: Status code of the request
                 - questions: List of questions for the assessment
 
     Error Response:
-    
+
                 - message: Message indicating the status of the request
                 - status_code: Status code of the request
 
     Example request:
 
-                curl -X POST "http://localhost:8000/api/assessments/start-assessment" -H  "accept: application/json" -H  \
+                curl -X POST "http://localhost:8000/api/assessments/start-assessment" \
+                    -H  "accept: application/json" -H  \
                 "Content-Type: application/json" -d "{\"assessment_id\":1}"
 
     Example response:
@@ -180,78 +193,83 @@ async def start_assessment( request:StartAssessment,response:Response, r:Request
             }
 
     Error response:
-    
+
             {
             "detail": "Unauthorized",
             "status_code": 401
             }
 
     Error response:
-        
+
             {
             "detail": "No assessment found for provided assessment_id ",
             "status_code": 404
             }
 
     Error response:
-            
+
             {
             "detail": "No questions found under the assessment_idr",
             "status_code": 404
             }
 
     Error response:
-                    
+
             {
             "detail": "Critical error occured while getting assessment details",
             "status_code": 500
             }
 
-    '''
+    """
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
 
-    skill_id = db.query(Assessment.skill_id).filter(Assessment.id == request.assessment_id).first()
-
-    #check for assessment to get duration and set cookie
-    assessment_questions, err = fetch_assessment_questions(user_id = user.id,assessment_id=request.assessment_id,db=db, count=False)
+    # check for assessment to get duration and set cookie
+    assessment_questions, err = fetch_assessment_questions(
+        user_id=user.id, assessment_id=request.assessment_id, db=db, count=False
+    )
 
     if err:
         return err
-    
+
     if not assessment_questions:
         return {
             "message": "No questions found under the assessment_id",
             "status_code": 404,
-            "data": {}
+            "data": {},
         }
 
-    assessment_instance = db.query(Assessment).filter(Assessment.id == request.assessment_id).first()
+    assessment_instance = (
+        db.query(Assessment).filter(Assessment.id == request.assessment_id).first()
+    )
 
     duration = assessment_instance.duration_minutes
 
     response.set_cookie(
-        key="assessment", 
-        value=str(request.assessment_id), 
-        max_age=time.time() + duration*60, 
-        httponly=True, 
-        secure=True, 
-        samesite='none'
-        )
-
+        key="assessment",
+        value=str(request.assessment_id),
+        max_age=time.time() + duration * 60,
+        httponly=True,
+        secure=True,
+        samesite="none",
+    )
 
     return {
         "message": "Assessment started successfully",
         "status_code": 200,
         "data": {
             "assessment_id": request.assessment_id,
-            "questions": assessment_questions
-        }
+            "questions": assessment_questions,
+        },
     }
 
 
 @router.get("/session")
-async def get_session_details(req:Request,token:str = Header(...),db:Session = Depends(get_db),):
+async def get_session_details(
+    req: Request,
+    token: str = Header(...),
+    db: Session = Depends(get_db),
+):
     """
     Retrieve session details for a user.
 
@@ -259,23 +277,24 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
     Request: Token, Assessment ID
 
     Response:
-    
+
             - message: Message indicating the status of the request
             - status_code: Status code of the request
             - data: List of answered and unanswered questions for the assessment
 
     Error Response:
-        
+
                 - message: Message indicating the status of the request
                 - status_code: Status code of the request
-    
+
     Example request:
-    
-                curl -X GET "http://localhost:8000/api/assessments/session/1" -H  "accept: application/json" -H  \
+
+                curl -X GET "http://localhost:8000/api/assessments/session/1" \
+                    -H  "accept: application/json" -H  \
                 "Content-Type: application/json" -d "{\"assessment_id\":1}"
-    
+
     Example response:
-        
+
                 {
                 "message": "Session details fetched successfully",
                 "status_code": 200,
@@ -315,14 +334,14 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
                 }
 
     Error response:
-            
+
             {
             "detail": "Unauthorized",
             "status_code": 401
             }
 
     Error response:
-                    
+
             {
             "detail": "Assessment already completed",
             "status_code": 400
@@ -331,29 +350,31 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
     """
     user = authenticate_user(token=token, permission="assessment.update.own")
     # user = fake_authenticate_user()
-    #get assessment id from cookie
+    # get assessment id from cookie
 
     assessment_id = req.cookies.get("assessment")
     if not assessment_id:
-
         return {
-                "message":"Assessment already started",
-                "status_code":302,
-                "data":{"url":f"{settings.FRONTEND_URL}/assessments/dashboard"}
-                }
+            "message": "Assessment already started",
+            "status_code": 302,
+            "data": {"url": f"{settings.FRONTEND_URL}/assessments/dashboard"},
+        }
 
-    unanswered_question, answered_question, error = fetch_answered_and_unanswered_questions(assessment_id=assessment_id, user_id=user.id,db=db)
+    (
+        unanswered_question,
+        answered_question,
+        error,
+    ) = fetch_answered_and_unanswered_questions(
+        assessment_id=assessment_id, user_id=user.id, db=db
+    )
 
     if error:
         raise error
-
-
 
     answered_question_list = []
     unanswered_question_list = []
 
     if answered_question != []:
-
         answered_question_list.extend(
             Questions(
                 question_id=question.question_id,
@@ -367,7 +388,6 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
             for question in answered_question
         )
     if unanswered_question != []:
-
         unanswered_question_list.extend(
             Questions(
                 question_id=question.id,
@@ -384,15 +404,20 @@ async def get_session_details(req:Request,token:str = Header(...),db:Session = D
         "status_code": 200,
         "data": {
             "answered_questions": answered_question_list,
-            "unanswered_questions": unanswered_question_list
-        }
+            "unanswered_questions": unanswered_question_list,
+        },
     }
 
 
-
-@router.post("/submit", )
+@router.post(
+    "/submit",
+)
 async def submit_assessment(
-    req:UserAssessmentanswer,res:Response,r:Request, db: Session = Depends(get_db),token:str = Header(...)
+    req: UserAssessmentanswer,
+    res: Response,
+    r: Request,
+    db: Session = Depends(get_db),
+    token: str = Header(...),
 ):
     """
     Submit an assessment for a user.
@@ -401,36 +426,39 @@ async def submit_assessment(
     Request_body: Token, Assessment ID, Answers, time_spent, question_ID
 
     Response:
-    
+
         - message: Message indicating the status of the request
         - status_code: Status code of the request
 
     Error Response:
-    
+
         - message: Message indicating the status of the request
         - status_code: Status code of the request
 
     Example request:
-        
-        curl -X POST "http://localhost:8000/api/assessments/submit" -H  "accept: application/json" -H  \
-        "Content-Type: application/json" -d "{\"assessment_id\":1,\"is_submitted\":true,\"time_spent\":60,\"response\":{\"question_id\":1,\"user_answer_id\":1}}"
+
+        curl -X POST "http://localhost:8000/api/assessments/submit" -H  \
+            "accept: application/json" -H  \
+        "Content-Type: application/json" -d "{\"assessment_id\":1,\
+            \"is_submitted\":true,\
+        \"time_spent\":60,\"response\":{\"question_id\":1,\"user_answer_id\":1}}"
 
     Example response:
-            
+
             {
             "message": "Assessment submitted successfully",
             "status_code": 200
             }
 
     Error response:
-                
+
             {
             "detail": "Unauthorized",
             "status_code": 401
             }
 
     Error response:
-                            
+
             {
             "detail": "Assessment already completed",
             "status_code": 400
@@ -443,13 +471,13 @@ async def submit_assessment(
             # delete cookie
             res.delete_cookie(key="assessment")
 
-    return save_session(req, user.id,db=db, token= token)
+    return save_session(req, user.id, db=db, token=token)
 
 
-
-@router.get('/get-user-assessments')
-def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(get_db)):
-
+@router.get("/get-user-assessments")
+def get_user_completed_assessments(
+    token: str = Header(...), db: Session = Depends(get_db)
+):
     """
     Retrieve all completed assessments for a user.
 
@@ -457,22 +485,23 @@ def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(
     Request: Token
 
     Response:
-    
+
         - message: Message indicating the status of the request
         - status_code: Status code of the request
         - assessments: List of assessments the user has completed
 
     Error Response:
-        
+
         - message: Message indicating the status of the request
         - status_code: Status code of the request
 
     Example request:
 
-        curl -X GET "http://localhost:8000/api/assessments/get-user-assessments" -H  "accept: application/json"
+        curl -X GET "http://localhost:8000/api/assessments/get-user-assessments" \
+            -H  "accept: application/json"
 
     Example response:
-    
+
             {
             "message": "Completed assessments fetched successfully",
             "status_code": 200,
@@ -508,21 +537,22 @@ def get_user_completed_assessments(token:str = Header(...),db:Session = Depends(
     """
     user = authenticate_user(token=token, permission="assessment.read")
     # user=fake_authenticate_user()
-    completed_assessments,error=get_completed_assessments(user.id,db=db)
+    completed_assessments, error = get_completed_assessments(user.id, db=db)
     if error:
         raise error
     return {
         "message": "Completed assessments fetched successfully",
         "status_code": 200,
-        "data": completed_assessments
+        "data": completed_assessments,
     }
 
 
-
-
-
 @router.get("/{assessment_id}")
-def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depends(get_db),):
+def get_assessment(
+    assessment_id: int,
+    token: str = Header(...),
+    db: Session = Depends(get_db),
+):
     """
     Retrieve assessment details for an assessment.
 
@@ -542,16 +572,17 @@ def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depen
         - end_date: End date of the assessment
 
     Error Response:
-    
+
         - message: Message indicating the status of the request
         - status_code: Status code of the request
 
     Example request:
 
-        curl -X GET "http://localhost:8000/api/assessments/1" -H  "accept: application/json"
+        curl -X GET "http://localhost:8000/api/assessments/1" \
+            -H  "accept: application/json"
 
     Example response:
-    
+
             {
             "assessment_id": 1,
             "skill_id": 1,
@@ -565,40 +596,43 @@ def get_assessment(assessment_id:int, token:str = Header(...),db:Session = Depen
             }
 
     Error response:
-    
+
             {
             "detail": "Unauthorized",
             "status_code": 401
             }
 
     Error response:
-                        
+
             {
             "detail": "No questions found under the assessment_id",
             "status_code": 404
             }
 
     """
-
-    user = authenticate_user(token=token, permission="assessment.read")
+    # assign function to variable "user" if user_id is needed
+    authenticate_user(token=token, permission="assessment.read")
     # user = fake_authenticate_user()
 
-    assessment_details, error = fetch_single_assessment(assessment_id=assessment_id, db=db)
+    assessment_details, error = fetch_single_assessment(
+        assessment_id=assessment_id, db=db
+    )
 
     if error:
         raise error
-    
+
     if not assessment_details:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
                 "message": "No assessment found",
                 "status_code": status.HTTP_404_NOT_FOUND,
-                "data":{}
-            })
-    
+                "data": {},
+            },
+        )
+
     return {
         "message": "Assessment details fetched successfully",
         "status_code": status.HTTP_200_OK,
-        "data": assessment_details
+        "data": assessment_details,
     }
-
-

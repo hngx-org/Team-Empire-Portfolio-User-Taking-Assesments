@@ -1,13 +1,15 @@
-from sqlalchemy.orm import relationship
-from app.database import Base
 import uuid
-from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+
+from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text,BOOLEAN
+from sqlalchemy.dialects.postgresql import ENUM, UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.types import ARRAY
 
+from app.database import Base
+
 # Define ENUMs
-STATUS = ENUM('pending', 'complete', 'failed', name='status_enum')
-BADGES = ENUM('Beginner', 'Intermediate', 'Expert', name='badges_enum')
+STATUS = ENUM("pending", "complete", "failed", name="status_enum")
+BADGES = ENUM("Beginner", "Intermediate", "Expert", name="badges_enum")
 
 
 class DATEBaseModel(Base):
@@ -16,12 +18,9 @@ class DATEBaseModel(Base):
 
     It is an abstract model for tables that have created_at and updated_at columns.
     """
+
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
-    # created_at = Column(TIMESTAMP(timezone=True),
-    #                     nullable=False, server_default=text("now()"))
-    # updated_at = Column(TIMESTAMP(timezone=True),
-    #                     nullable=False, onupdate=text("now()"))
 
 
 class BaseModel(Base):
@@ -30,6 +29,7 @@ class BaseModel(Base):
 
     It is an abstract model for tables that have created_at, updated_at and id columns.
     """
+
     __abstract__ = True
     id = Column(Integer, primary_key=True, index=True)
 
@@ -40,9 +40,9 @@ class UUIDBaseModel(Base):
 
     It is an abstract model for tables that have created_at, updated_at and id columns.
     """
+
     __abstract__ = True
-    id = Column(UUID(as_uuid=True), primary_key=True,
-                index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
 
 
 class User(UUIDBaseModel):
@@ -85,10 +85,13 @@ class User(UUIDBaseModel):
     provider = Column(String, nullable=True)  # Explain provider
     profile_pic = Column(Text, nullable=True)
     refresh_token = Column(String, default="")
-    createdAt = Column(TIMESTAMP(timezone=True),
-                       nullable=False, server_default=text("now()"))
+    createdAt = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
+    )
 
-    user_assessment = relationship("UserAssessment", back_populates="user", lazy="joined")
+    user_assessment = relationship(
+        "UserAssessment", back_populates="user", lazy="joined"
+    )
     user_badge = relationship("UserBadge", back_populates="user")
 
 
@@ -118,22 +121,29 @@ class UserAssessment(BaseModel):
     - UserResponse: one-to-many
 
     """
+
     __tablename__ = "user_assessment"  # this needs to be corrected
-    user_id = Column(UUID, ForeignKey(
-        "user.id", ondelete="CASCADE"), nullable=False)
-    assessment_id = Column(Integer, ForeignKey(
-        "assessment.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    assessment_id = Column(
+        Integer, ForeignKey("assessment.id", ondelete="CASCADE"), nullable=False
+    )
     score = Column(Float)
     status = Column(STATUS, nullable=False, default="pending")
     time_spent = Column(Integer)
-    submission_date = Column(TIMESTAMP(timezone=True),
-                             nullable=False, server_default=text("now()"))
+    submission_date = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
+    )
 
     user = relationship("User", back_populates="user_assessment")
-    assessment = relationship("Assessment", back_populates="user_assessment", lazy="joined")
+    assessment = relationship(
+        "Assessment", back_populates="user_assessment", lazy="joined"
+    )
     user_response = relationship(
-        "UserResponse", back_populates="user_assessment", lazy="joined")
-    user_badge = relationship("UserBadge", back_populates="user_assessment", lazy="joined")
+        "UserResponse", back_populates="user_assessment", lazy="joined"
+    )
+    user_badge = relationship(
+        "UserBadge", back_populates="user_assessment", lazy="joined"
+    )
 
 
 class Assessment(BaseModel):
@@ -165,23 +175,25 @@ class Assessment(BaseModel):
     - UserBadge: one-to-many
 
     """
+
     __tablename__ = "assessment"
 
-    skill_id = Column(Integer, ForeignKey(
-        "skill.id", ondelete="CASCADE"), nullable=False)
+    skill_id = Column(
+        Integer, ForeignKey("skill.id", ondelete="CASCADE"), nullable=False
+    )
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     duration_minutes = Column(Integer, nullable=False)
     status = Column(STATUS, nullable=False, default="pending")
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True), nullable=False)
+    is_published = Column(BOOLEAN,nullable=False,default=False)
 
-    user_assessment = relationship(
-        "UserAssessment", back_populates="assessment")
+    user_assessment = relationship("UserAssessment", back_populates="assessment")
     skill = relationship("Skill", back_populates="assessment")
     assessment_category = relationship(
-        "AssessmentCategory", back_populates="assessment")
-
+        "AssessmentCategory", back_populates="assessment"
+    )
 
 
 class Skill(BaseModel):
@@ -210,22 +222,24 @@ class Skill(BaseModel):
     - AssessmentCategory: one-to-many
 
     """
+
     __tablename__ = "skill"
 
     category_name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    parent_skill_id = Column(Integer, ForeignKey(
-        "skill.id", ondelete="CASCADE"), nullable=True)
+    parent_skill_id = Column(
+        Integer, ForeignKey("skill.id", ondelete="CASCADE"), nullable=True
+    )
 
     assessment = relationship("Assessment", back_populates="skill")
     parent_skill = relationship(
-        "Skill", remote_side="Skill.id", back_populates="child_skill")
+        "Skill", remote_side="Skill.id", back_populates="child_skill"
+    )
     child_skill = relationship(
         "Skill", remote_side=[parent_skill_id], back_populates="parent_skill"
     )
     skill_badge = relationship("SkillBadge", back_populates="skill")
-    assessment_category = relationship(
-        "AssessmentCategory", back_populates="skill")
+    assessment_category = relationship("AssessmentCategory", back_populates="skill")
 
 
 class Question(BaseModel):
@@ -253,16 +267,20 @@ class Question(BaseModel):
     - UserResponse: one-to-many
 
     """
+
     __tablename__ = "question"
 
-    assessment_id = Column(Integer, ForeignKey(
-        "assessment.id", ondelete="CASCADE"), nullable=False)
+    assessment_id = Column(
+        Integer, ForeignKey("assessment.id", ondelete="CASCADE"), nullable=False
+    )
     question_no = Column(Integer, nullable=False)
     question_text = Column(Text, nullable=False)
     question_type = Column(String, nullable=False)
 
     # assessment = relationship("Assessment", back_populates="question")
-    answer = relationship("Answer", back_populates="question", lazy="joined", uselist=False)
+    answer = relationship(
+        "Answer", back_populates="question", lazy="joined", uselist=False
+    )
     user_response = relationship("UserResponse", back_populates="question")
 
 
@@ -288,14 +306,18 @@ class Answer(BaseModel):
     - Question: one-to-many
     - UserResponse: one-to-many
     """
+
     __tablename__ = "answer"
 
-    question_id = Column(Integer, ForeignKey(
-        "question.id", ondelete="CASCADE"), nullable=False)
+    question_id = Column(
+        Integer, ForeignKey("question.id", ondelete="CASCADE"), nullable=False
+    )
     options = Column(ARRAY(String))
     correct_option = Column(String)
 
-    question = relationship("Question", back_populates="answer",  lazy="joined", uselist=False)
+    question = relationship(
+        "Question", back_populates="answer", lazy="joined", uselist=False
+    )
     user_response = relationship("UserResponse", back_populates="answer")
 
 
@@ -324,10 +346,12 @@ class SkillBadge(DATEBaseModel):
     - UserBadge: one-to-many
 
     """
+
     __tablename__ = "skill_badge"
 
-    skill_id = Column(Integer, ForeignKey(
-        "skill.id", ondelete="CASCADE"), nullable=False)
+    skill_id = Column(
+        Integer, ForeignKey("skill.id", ondelete="CASCADE"), nullable=False
+    )
     name = Column(BADGES, nullable=False)
     badge_image = Column(Text, nullable=False)
     min_score = Column(Float, nullable=False)
@@ -335,12 +359,10 @@ class SkillBadge(DATEBaseModel):
     createdAt = Column(
         TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
     )
-    updatedAt = Column(
-        TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()")
-    )
+    updatedAt = Column(TIMESTAMP(timezone=True), nullable=False, onupdate=text("now()"))
 
     skill = relationship("Skill", back_populates="skill_badge")
-    user_badge = relationship("UserBadge", back_populates="skill_badge",lazy="joined")
+    user_badge = relationship("UserBadge", back_populates="skill_badge", lazy="joined")
 
 
 class UserResponse(BaseModel):
@@ -367,18 +389,23 @@ class UserResponse(BaseModel):
     - Answer: one-to-many
 
     """
+
     __tablename__ = "user_response"
 
-    user_assessment_id = Column(Integer, ForeignKey(
-        "user_assessment.id", ondelete="CASCADE"), nullable=False)
-    question_id = Column(Integer, ForeignKey(
-        "question.id", ondelete="CASCADE"), nullable=False)
-    answer_id = Column(Integer, ForeignKey(
-        "answer.id", ondelete="CASCADE"), nullable=False)
+    user_assessment_id = Column(
+        Integer, ForeignKey("user_assessment.id", ondelete="CASCADE"), nullable=False
+    )
+    question_id = Column(
+        Integer, ForeignKey("question.id", ondelete="CASCADE"), nullable=False
+    )
+    answer_id = Column(
+        Integer, ForeignKey("answer.id", ondelete="CASCADE"), nullable=False
+    )
     selected_response = Column(Text)
 
     user_assessment = relationship(
-        "UserAssessment", back_populates="user_response", lazy="joined")
+        "UserAssessment", back_populates="user_response", lazy="joined"
+    )
     question = relationship("Question", back_populates="user_response")
     answer = relationship("Answer", back_populates="user_response")
 
@@ -405,15 +432,17 @@ class AssessmentCategory(BaseModel):
     - Skill: one-to-many
 
     """
+
     __tablename__ = "assessment_category"
 
-    assessment_id = Column(Integer, ForeignKey(
-        "assessment.id", ondelete="CASCADE"), nullable=False)
-    skill_id = Column(Integer, ForeignKey(
-        "skill.id", ondelete="CASCADE"), nullable=False)
+    assessment_id = Column(
+        Integer, ForeignKey("assessment.id", ondelete="CASCADE"), nullable=False
+    )
+    skill_id = Column(
+        Integer, ForeignKey("skill.id", ondelete="CASCADE"), nullable=False
+    )
 
-    assessment = relationship(
-        "Assessment", back_populates="assessment_category")
+    assessment = relationship("Assessment", back_populates="assessment_category")
     skill = relationship("Skill", back_populates="assessment_category")
 
 
@@ -440,26 +469,30 @@ class UserBadge(DATEBaseModel):
     - SkillBadge: one-to-many
     - Assessment: one-to-many
     """
+
     __tablename__ = "user_badge"
 
-    user_id = Column(UUID, ForeignKey(
-        "user.id", ondelete="CASCADE"), nullable=False)
-    badge_id = Column(Integer, ForeignKey(
-        "skill_badge.id", ondelete="CASCADE"), nullable=False)
-    user_assessment_id = Column(Integer, ForeignKey(
-        "user_assessment.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    badge_id = Column(
+        Integer, ForeignKey("skill_badge.id", ondelete="CASCADE"), nullable=False
+    )
+    user_assessment_id = Column(
+        Integer, ForeignKey("user_assessment.id", ondelete="CASCADE"), nullable=False
+    )
 
     user = relationship("User", back_populates="user_badge")
-    skill_badge = relationship("SkillBadge", back_populates="user_badge",lazy="joined")
-    user_assessment = relationship("UserAssessment", back_populates="user_badge",lazy="joined")
+    skill_badge = relationship("SkillBadge", back_populates="user_badge", lazy="joined")
+    user_assessment = relationship(
+        "UserAssessment", back_populates="user_badge", lazy="joined"
+    )
 
 
 class Track(BaseModel):
     __tablename__ = "tracks"
     track = Column(String, nullable=False)
 
+
 class UserTrack(BaseModel):
     __tablename__ = "user_track"
-    user_id = Column(UUID, ForeignKey(
-    "user.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     track_id = Column(Integer)
