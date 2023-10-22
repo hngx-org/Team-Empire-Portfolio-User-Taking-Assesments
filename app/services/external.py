@@ -69,10 +69,7 @@ def authenticate_user(permission: str, token: str):
 
 
 # create a function that has a fixed token for testing
-def fake_authenticate_user(
-    fake_token: str = "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg54kjhkg4j6h45g6kjh\
-        45gk6jh6k6g34hj6",
-):
+def fake_authenticate_user():
     """
     ***fake_authenticate_user(SUBJECT TO CHANGE when authentication \
         service provides us with information)***
@@ -90,15 +87,6 @@ def fake_authenticate_user(
         returns a status code other than 200.
 
     """
-    if (
-        fake_token
-        != "l3h5.34jb3,4mh346gv,34h63vk3j4h5k43hjg\
-        54kjhkg4j6h45g6kjh45gk6jh6k6g34hj6"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
-        )
-
     data = {
         "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": [
