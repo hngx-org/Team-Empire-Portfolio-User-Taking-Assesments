@@ -44,13 +44,9 @@ def get_db_engine():
         database_url = "sqlite:///./database.db"
 
     if db_type == "sqlite":
-        db_engine = create_engine(
-            database_url, connect_args={"check_same_thread": False}
-        )
-    else:
-        db_engine = create_engine(database_url)
+        return create_engine(database_url, connect_args={"check_same_thread": False})
 
-    return db_engine
+    return create_engine(database_url)
 
 
 db_engine = get_db_engine()

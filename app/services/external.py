@@ -102,7 +102,9 @@ def fake_authenticate_user():
     return AuthenticateUser(**data)
 
 
-def fetch_assessment_questions(user_id, assessment_id: str, count: bool, db: Session):
+def fetch_assessment_questions(
+    user_id: str, assessment_id: int, count: bool, db: Session
+):
     """
     Fetch assessment questions:
         This function fetches the questions under the assessment_id

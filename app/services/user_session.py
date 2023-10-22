@@ -127,7 +127,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
         }
 
 
-def send_email(user_id, db: Session):
+def send_email(user_id: str, db: Session):
     # get user email and name
     user = db.query(User).filter(User.id == user_id).first()
     email_payload = {
@@ -139,7 +139,7 @@ def send_email(user_id, db: Session):
     requests.post(settings.MESSAGING, data=json.dumps(email_payload))
 
 
-def assign_badge(assessment_id, token):
+def assign_badge(assessment_id: int, token: str):
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={"Authorization": f"Bearer {token}"},

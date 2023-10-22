@@ -49,10 +49,10 @@ class Permissions:
 
     """
 
-    def __init__(self, permissions):
+    def __init__(self, permissions: list):
         self.permissions = permissions
 
-    def check_permission(self, permission_list, permission):
+    def check_permission(self, permissions: list, permission: str):
         """
         Check permission:
             This method checks if a permission is present in
@@ -67,9 +67,9 @@ class Permissions:
 
         """
 
-        return permission in permission_list
+        return permission in permissions
 
-    def check_permissions(self, permission_list):
+    def check_permissions(self, permissions: list):
         """
         Check permissions:
             This method checks if a list of permissions is present in
@@ -84,7 +84,7 @@ class Permissions:
 
         """
         return all(
-            self.check_permission(permission_list, permission)
+            self.check_permission(permissions, permission)
             for permission in self.permissions
         )
 
