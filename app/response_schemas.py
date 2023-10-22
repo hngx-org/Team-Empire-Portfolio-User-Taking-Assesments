@@ -1,18 +1,25 @@
+from typing import List, Optional, Set
+
 from pydantic import BaseModel
-from typing import List, Set, Optional
+
 from app.schemas import STATUS, AssessmentAnswers
+
 
 class Response(BaseModel):
     message: str
     status_code: int
+
+
 class AuthenticateUser(BaseModel):
     id: str
     permissions: list
+
 
 class Question(BaseModel):
     id: int
     question_text: str
     question_type: str
+
 
 class Questions(BaseModel):
     question_id: int
@@ -22,10 +29,12 @@ class Questions(BaseModel):
     answer_id: int
     user_selected_answer: Optional[str] = None
     options: Set
+
+
 class StartAssessmentResponse(Questions):
     message: str
     status_code: int
-    data:List[Questions]
+    data: List[Questions]
 
 
 class Assessment(BaseModel):
@@ -61,16 +70,17 @@ class SingleAssessmentResponse(BaseModel):
     assessment_id: int
     skill_id: int
     title: str
-    description : str
-    duration_minutes : int
+    description: str
+    duration_minutes: int
     pass_score: float
     status: STATUS
-    start_date : str
+    start_date: str
     end_date: str
 
+
 class AssessmentResults(BaseModel):
-    score : float
-    status : STATUS
-    user_id : str
+    score: float
+    status: STATUS
+    user_id: str
     assessment_id: int
-    answers : list[AssessmentAnswers]
+    answers: list[AssessmentAnswers]
