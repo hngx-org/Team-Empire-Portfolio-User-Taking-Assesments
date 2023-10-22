@@ -1,13 +1,16 @@
 title = "Assessment API"
-summary="The API handles all Assessment related tasks for the HNGX  Zuri Portfolio Project  "
-version="0.0.1"
-docs="/api/v1"
+summary = "The API handles all Assessment related tasks for the HNGX \
+  Zuri Portfolio Project  "
+version = "0.0.1"
+docs = "/api/v1"
 description = """
 ### Summary
 
 This version of the API can do awesome stuff like:
 
-*Get All User Asessments*, *Start Assessment*, *Get Assessment Session Details*, *Get Assessment Result*,*Submit Assessment*,*Get User Completed Assessments*,*Get User Assessment*.
+*Get All User Asessments*, *Start Assessment*, *Get Assessment Session Details*, \
+  *Get Assessment Result*,*Submit Assessment*,*Get User Completed Assessments*,\
+    *Get User Assessment*.
 
 <details>
 <summary>Brief Descriptions</summary>
@@ -95,11 +98,12 @@ Method:GET
 
 
 
-  
- 
+
+
 ### Miscellaneous
 
-How to generate token [Here](https://linear.app/zuri-project-backend/issue/TAK-15/get-user-assessment#comment-cdc22651)
+How to generate token [Here]\
+  (https://linear.app/zuri-project-backend/issue/TAK-15/get-user-assessment#comment-cdc22651)
 
 ---
 

@@ -1,12 +1,14 @@
-from sqlalchemy.orm import Session
-from app.models import UserAssessment, Question, UserResponse, Answer, Assessment,User
-from app.schemas import UserAssessmentanswer
-from fastapi import HTTPException, status
-from app.response_schemas import Response
-import requests
 import json
-from app.config import settings
 from datetime import datetime as time
+
+import requests
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.config import settings
+from app.models import Answer, Question, User, UserAssessment, UserResponse
+from app.schemas import UserAssessmentanswer
+
 
 # save session details
 def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: str):
@@ -26,14 +28,15 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
 
     Returns:
     - response : dict
-        dictionary containing the response message, status code, score, badge ID, and assessment ID
+        dictionary containing the response message, status code, score, badge ID, \
+            and assessment ID
     """
     user_assessment_instance = (
         db.query(UserAssessment)
         .filter(
             UserAssessment.user_id == user_id,
             UserAssessment.assessment_id == data.assessment_id,
-            UserAssessment.status == "pending"
+            UserAssessment.status == "pending",
         )
         .first()
     )
@@ -44,8 +47,8 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
             detail={
                 "message": "No pending assessment found",
                 "status_code": status.HTTP_404_NOT_FOUND,
-                "data": {}
-            }
+                "data": {},
+            },
         )
 
     if not data.is_submitted and data.time_spent is None:
@@ -53,7 +56,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
             db.query(UserResponse)
             .filter(
                 UserResponse.user_assessment_id == user_assessment_instance.id,
-                UserResponse.question_id == data.response.question_id
+                UserResponse.question_id == data.response.question_id,
             )
             .first()
         )
@@ -63,7 +66,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
                 user_assessment_id=user_assessment_instance.id,
                 question_id=data.response.question_id,
                 answer_id=data.response.user_answer_id,
-                selected_response=data.response.answer_text
+                selected_response=data.response.answer_text,
             )
 
             db.add(user_response_instance)
@@ -78,7 +81,7 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
         return {
             "message": "Session details saved successfully",
             "status_code": status.HTTP_200_OK,
-            "data": {}
+            "data": {},
         }
 
     else:
@@ -95,11 +98,14 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
             .all()
         )
 
-        score = sum(
-            user_response.selected_response == user_response.answer.correct_option
-            for user_response in user_responses
-        ) / len(questions) * 100
-
+        score = (
+            sum(
+                user_response.selected_response == user_response.answer.correct_option
+                for user_response in user_responses
+            )
+            / len(questions)
+            * 100
+        )
 
         user_assessment_instance.score = score
         user_assessment_instance.status = "complete"
@@ -110,7 +116,6 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
 
         badge_id = assign_badge(user_assessment_instance.id, token)
 
-
         return {
             "message": "Submission and grading successful",
             "status_code": status.HTTP_200_OK,
@@ -118,38 +123,36 @@ def save_session(data: UserAssessmentanswer, user_id: int, db: Session, token: s
                 "score": score,
                 "badge_id": badge_id,
                 "assessment_id": user_assessment_instance.assessment_id,
-            }
+            },
         }
-    
 
-def send_email(user_id,db:Session):
+
+def send_email(user_id: str, db: Session):
     # get user email and name
-    user=db.query(User).filter(User.id==user_id).first()
-    email_payload={
-        "recipient":user.email,
-        "name":f'{user.first_name} {user.last_name}',
-        "service":"Taking Assessment",
-        "call_to_action_link":"https://example.com"
+    user = db.query(User).filter(User.id == user_id).first()
+    email_payload = {
+        "recipient": user.email,
+        "name": f"{user.first_name} {user.last_name}",
+        "service": "Taking Assessment",
+        "call_to_action_link": "https://example.com",
     }
-    response=requests.post(settings.MESSAGING,data=json.dumps(email_payload))
-    # if response.status_code != 200:
-    #     raise HTTPException(status_code=response.status_code,detail={"message":"Email Delivery Error"})
-    # return response.status_code
+    requests.post(settings.MESSAGING, data=json.dumps(email_payload))
 
-def assign_badge( assessment_id, token):
 
+def assign_badge(assessment_id: int, token: str):
     req = requests.post(
         f"{settings.BADGE_SERVICE}",
         headers={"Authorization": f"Bearer {token}"},
-        data=json.dumps({"assessment_id": int(assessment_id)})
+        data=json.dumps({"assessment_id": int(assessment_id)}),
     )
 
     if req.status_code != 201:
-        raise HTTPException(status_code=req.status_code, detail={
-            "message": "Badge assignment failed",
-            "status_code": req.status_code,
-            "data": {}
-        })
-    return req.json()['data']['badge']['id']
-    
-    
+        raise HTTPException(
+            status_code=req.status_code,
+            detail={
+                "message": "Badge assignment failed",
+                "status_code": req.status_code,
+                "data": {},
+            },
+        )
+    return req.json()["data"]["badge"]["id"]
