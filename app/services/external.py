@@ -87,7 +87,8 @@ def fake_authenticate_user():
         returns a status code other than 200.
 
     """
-    data = {
+
+    user_data = {
         "id": "e2009b92-8acf-406d-a974-95fb6a5215f3",
         "permissions": [
             "assessment.create",
@@ -99,7 +100,7 @@ def fake_authenticate_user():
         ],
     }
 
-    return AuthenticateUser(**data)
+    return AuthenticateUser(**user_data)
 
 
 def fetch_assessment_questions(
@@ -253,7 +254,7 @@ def fetch_answered_and_unanswered_questions(
         returns HTTPException if there is no match
     """
     # query for any questions corresponding to the assessment_id
-    user_assement_instance = (
+    user_assessment_instance = (
         db.query(UserAssessment)
         .filter(
             UserAssessment.assessment_id == assessment_id,
@@ -262,16 +263,16 @@ def fetch_answered_and_unanswered_questions(
         )
         .first()
     )
-    if not user_assement_instance:
+    if not user_assessment_instance:
         # for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
+        error_message = "No questions found under the assessment_id"
         return (
             None,
             None,
             HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
-                    "message": err_message,
+                    "message": error_message,
                     "status_code": status.HTTP_404_NOT_FOUND,
                     "data": {},
                 },
@@ -282,14 +283,14 @@ def fetch_answered_and_unanswered_questions(
     questions = db.query(Question).filter(Question.assessment_id == assessment_id).all()
     if not questions:
         # for any reason if  there are no questions return false
-        err_message = "No questions found under the assessment_id"
+        error_message = "No questions found under the assessment_id"
         return (
             None,
             None,
             HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
-                    "message": err_message,
+                    "message": error_message,
                     "status_code": status.HTTP_404_NOT_FOUND,
                     "data": {},
                 },
@@ -297,7 +298,7 @@ def fetch_answered_and_unanswered_questions(
         )
 
     answered_questions = db.query(UserResponse).filter(
-        UserResponse.user_assessment_id == user_assement_instance.id
+        UserResponse.user_assessment_id == user_assessment_instance.id
     )
     if answered_questions != []:
         for q_ans in answered_questions.all():
