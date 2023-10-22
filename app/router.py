@@ -83,31 +83,23 @@ async def get_all_user_assessments(
 
     Error response:
 
-            {
-            "detail": "Unauthorized",
-            "status_code": 401
+        {
+            "detail": {
+                "message": "Unauthorized",
+                "status_code": 401,
+                "data": {}
             }
+        }
 
     Error response:
 
-            {
-            "detail": "No track found for this user",
-            "status_code": 404
+        {
+        "detail": {
+            "message": "No assessments found",
+            "status_code": 404,
+            "data": {}
             }
-
-    Error response:
-
-            {
-            "detail": "No assessments found for this user",
-            "status_code": 404
-            }
-
-    Error response:
-
-            {
-            "detail": "failed to fetch assessments",
-            "status_code": 500
-            }
+        }
 
     """
 
@@ -195,31 +187,23 @@ async def start_assessment(
 
     Error response:
 
-            {
-            "detail": "Unauthorized",
-            "status_code": 401
+        {
+            "detail": {
+                "message": "Unauthorized",
+                "status_code": 401,
+                "data": {}
             }
+        }
 
     Error response:
 
-            {
-            "detail": "No assessment found for provided assessment_id ",
-            "status_code": 404
+        {
+            "detail": {
+                "message": "No questions found under the assessment_id",
+                "status_code": 404,
+                "data": {}
             }
-
-    Error response:
-
-            {
-            "detail": "No questions found under the assessment_idr",
-            "status_code": 404
-            }
-
-    Error response:
-
-            {
-            "detail": "Critical error occured while getting assessment details",
-            "status_code": 500
-            }
+        }
 
     """
     user = authenticate_user(token=token, permission="assessment.update.own")
@@ -336,17 +320,25 @@ async def get_session_details(
 
     Error response:
 
-            {
-            "detail": "Unauthorized",
-            "status_code": 401
+        {
+            "detail": {
+                "message": "Unauthorized",
+                "status_code": 401,
+                "data": {}
             }
+        }
 
     Error response:
 
-            {
-            "detail": "Assessment already completed",
-            "status_code": 400
+        {
+            "detail": {
+                "message": "Assessment already started",
+                "status_code": 302,
+                "data": {
+                    "url": "http://localhost:3000/assessments/dashboard"
+                }
             }
+        }b
 
     """
     user = authenticate_user(token=token, permission="assessment.update.own")
@@ -615,12 +607,12 @@ def get_assessment(
     authenticate_user(token=token, permission="assessment.read")
     # user = fake_authenticate_user()
 
-    assessment_details, err = fetch_single_assessment(
+    assessment_details, error = fetch_single_assessment(
         assessment_id=assessment_id, db=db
     )
 
-    if err:
-        raise err
+    if error:
+        raise error
 
     if not assessment_details:
         raise HTTPException(

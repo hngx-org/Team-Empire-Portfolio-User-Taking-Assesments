@@ -9,6 +9,8 @@
     - [Prerequisites](#prerequisites)
     - [Installing](#installing)
   - [🎈 Usage ](#-usage-)
+    - [Windows](#windows)
+    - [Linux and MacOS](#linux-and-macos)
   - [🚀 Deployment ](#-deployment-)
 
 ## 🧐 About <a name = "about"></a>
@@ -49,20 +51,16 @@ python main.py
 
 To run the tests, run the following command:
 
+### Windows
+
 ```bash
-pytest tests.py
+./CMD.sh test
 ```
 
-To run the tests with coverage, run the following command:
+### Linux and MacOS
 
 ```bash
-pytest --cov=app tests.py
-```
-
-To run the tests with coverage and generate an HTML report, run the following command:
-
-```bash
-pytest --cov=app --cov-report html tests.py
+make test
 ```
 
 ***[Documentation](http://localhost:8000/api) of the API is available at `http://localhost:8000/api`***
