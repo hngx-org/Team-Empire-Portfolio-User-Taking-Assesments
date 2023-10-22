@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
-from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text
+from sqlalchemy import Column, Integer, String, TIMESTAMP, text, ForeignKey, Float, Boolean, Text,BOOLEAN
 from sqlalchemy.dialects.postgresql import UUID, ENUM
 from sqlalchemy.types import ARRAY
 
@@ -175,6 +175,7 @@ class Assessment(BaseModel):
     status = Column(STATUS, nullable=False, default="pending")
     start_date = Column(TIMESTAMP(timezone=True), nullable=False)
     end_date = Column(TIMESTAMP(timezone=True), nullable=False)
+    is_published = Column(BOOLEAN,nullable=False,default=False)
 
     user_assessment = relationship(
         "UserAssessment", back_populates="assessment")
