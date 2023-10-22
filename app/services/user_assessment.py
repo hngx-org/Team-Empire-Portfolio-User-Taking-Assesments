@@ -40,11 +40,13 @@ def get_user_assessments_from_db(user_id: str, db: Session):
         )
 
     # Get all assessments for the user's skill category
-    #also filtering out drafted assessments, check for "is_published"
+    # also filtering out drafted assessments, check for "is_published"
     assessments = (
         db.query(Assessment)
         .join(Question, Assessment.id == Question.assessment_id, isouter=True)
-        .filter(Assessment.skill_id == user_track.Skill.id, Assessment.is_published==True)
+        .filter(
+            Assessment.skill_id == user_track.Skill.id, Assessment.is_published is True
+        )
         .group_by(Assessment.id)
         .having(func.count(Question.id) > 0)
         .all()

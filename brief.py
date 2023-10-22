@@ -83,7 +83,7 @@ Method:GET
 | `token`      | `string` | **Required**. *header param* |
 
 
-### Get Asessment.  =>/skill_id
+### Get Asessment.  =>/assessment_id
 
 ```http
 Method:GET
@@ -95,15 +95,6 @@ Method:GET
 | `assessment_id` | `string` | **Required**. *path param* |
 
 </details>
-
-
-
-
-
-### Miscellaneous
-
-How to generate token [Here]\
-  (https://linear.app/zuri-project-backend/issue/TAK-15/get-user-assessment#comment-cdc22651)
 
 ---
 
