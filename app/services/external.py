@@ -307,3 +307,54 @@ def fetch_answered_and_unanswered_questions(
                     questions.remove(q)
 
     return questions, answered_questions, None
+
+def fetch_assessment_by_skill(skill_id:int,db:Session):
+    """
+        Get  single assessment :
+            This function gets a single assessment details if the skill_id is present in the userAssessment database
+
+        Parameters:
+        - skill_id : str
+            skill id of the user
+        - db : Session
+            database session
+
+
+        Returns:
+        - check : Assessment
+            returns the Assessment object if there is a match
+        - None : None
+            returns None if there is no match
+
+    """
+    #query for assessment that the user has not taken
+    assessment = db.query(Assessment).filter(Assessment.skill_id==skill_id,Assessment.status =="pending",Assessment.is_published==True).first()
+
+    
+    if not assessment:
+        return None, HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "No assessment found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": {},
+            },
+        )
+
+    question_count = (
+        db.query(Question).filter(Question.assessment_id == assessment.id).count()
+    )
+
+    assessment_details = {
+        "assessment_id": assessment.id,
+        "skill_id": assessment.skill_id,
+        "title": assessment.title,
+        "description": assessment.description,
+        "duration_minutes": assessment.duration_minutes,
+        "question_count": question_count,
+        "status": assessment.status,
+        "start_date": assessment.start_date,
+        "end_date": assessment.end_date,
+    }
+
+    return assessment_details, None

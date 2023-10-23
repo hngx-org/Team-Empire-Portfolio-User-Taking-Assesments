@@ -14,6 +14,7 @@ from app.services.external import (
     fetch_answered_and_unanswered_questions,
     fetch_assessment_questions,
     fetch_single_assessment,
+    fetch_assessment_by_skill,
 )
 from app.services.user_assessment import get_user_assessments_from_db
 from app.services.user_session import save_session
@@ -608,6 +609,97 @@ def get_assessment(
 
     assessment_details, error = fetch_single_assessment(
         assessment_id=assessment_id, db=db
+    )
+
+    if error:
+        raise error
+
+    if not assessment_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "No assessment found",
+                "status_code": status.HTTP_404_NOT_FOUND,
+                "data": {},
+            },
+        )
+
+    return {
+        "message": "Assessment details fetched successfully",
+        "status_code": status.HTTP_200_OK,
+        "data": assessment_details,
+    }
+
+
+@router.get("/{skill_id}")
+def get_assessment_by_skill(
+    skill_id: int,
+    token: str = Header(...),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve assessment details for an assessment.
+
+    Method: GET
+    Request: Token, Skill ID
+
+    Response:
+
+        - assessment_id: ID of the assessment
+        - skill_id: ID of the skill
+        - title: Title of the assessment
+        - description: Description of the assessment
+        - duration_minutes: Duration of the assessment
+        - question_count: Number of questions in the assessment
+        - status: Status of the assessment
+        - start_date: Start date of the assessment
+        - end_date: End date of the assessment
+
+    Error Response:
+
+        - message: Message indicating the status of the request
+        - status_code: Status code of the request
+
+    Example request:
+
+        curl -X GET "http://localhost:8000/api/assessments/1" \
+            -H  "accept: application/json"
+
+    Example response:
+
+            {
+            "assessment_id": 1,
+            "skill_id": 1,
+            "title": "Python Assessment",
+            "description": "Python assessment for beginners",
+            "duration_minutes": 60,
+            "question_count": 10,
+            "status": "pending",
+            "start_date": "2021-05-01",
+            "end_date": "2021-05-30"
+            }
+
+    Error response:
+
+            {
+            "detail": "Unauthorized",
+            "status_code": 401
+            }
+
+    Error response:
+
+            {
+            "detail": "No questions found under the assessment_id",
+            "status_code": 404
+            }
+
+    """
+    # assign function to variable "user" if user_id is needed
+    authenticate_user(token=token, permission="assessment.read")
+    # user = fake_authenticate_user()
+
+    assessment_details, error = fetch_assessment_by_skill(
+        skill_id=skill_id, db=db
     )
 
     if error:
