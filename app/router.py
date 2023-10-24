@@ -233,9 +233,6 @@ async def start_assessment(
         key="assessment",
         value=str(request.assessment_id),
         max_age=time.time() + duration * 60,
-        httponly=True,
-        secure=True,
-        samesite="none",
     )
 
     return {
@@ -347,7 +344,7 @@ async def get_session_details(
     assessment_id = req.cookies.get("assessment")
     if not assessment_id:
         return {
-            "message": "Assessment already started",
+            "message": "No session found",
             "status_code": 302,
             "data": {"url": f"{settings.FRONTEND_URL}/assessments/dashboard"},
         }
