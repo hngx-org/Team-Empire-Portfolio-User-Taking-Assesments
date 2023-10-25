@@ -28,11 +28,42 @@ This is a microservice that is part of a larger project. It is responsible for h
 ### Installing
 
 1. Clone the repository
-2. Install the dependencies
+2. Create a virtual environment
 
-```bash
-pip install -r requirements.txt
-```
+  - For Linux and MacOS
+
+     - For virtualenv
+        ```bash
+            make -v name_of_virtual_environment
+        ```
+
+     - For pipenv
+        ```bash
+
+            make -V
+        ```
+
+  - For Windows
+    - For virtualenv
+        ```bash
+            make.bat v name_of_virtual_environment
+        ```
+
+     - For pipenv
+        ```bash
+
+            make.bat V
+        ```
+3. Install the dependencies
+
+  - For Linux and MacOS
+    ```bash
+        make install
+    ```
+  - For Windows
+    ```bash
+        make.bat install
+    ```
 
 3. Create a `.env` file in the root directory of the project and add the following environment variables in [settings.py](app/settings.py) to the file:
 
@@ -45,16 +76,17 @@ DATABASE_URL=postgres://user:password@localhost:5432/database
 To run the application, run the following command:
 
 ```bash
-python main.py
+make
+or
+make run
 ```
-
 
 To run the tests, run the following command:
 
 ### Windows
 
 ```bash
-./CMD.sh test
+  make.bat test
 ```
 
 ### Linux and MacOS
