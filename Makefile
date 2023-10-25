@@ -1,15 +1,34 @@
-.PHONY: install
+.PHONY: run
+ARG ?= "default"
+run:
+	@echo "Running main.py"
+	@python main.py
 
 install:
-	pip install pre-commit
-	pre-commit install
+	@pip install -r requirements.txt
+	@pre-commit install
 
 test:
-	python -m pytest test_main.py
+	@echo "Running tests..."
+	@python -m pytest test_main.py
 
 commit:
-	git add .
-	git commit
+	@echo "Committing changes..."
+	@git add .
+	@git commit
 
 fmt:
-	python -m black .
+	@echo "Formatting code..."
+	@python -m black .
+
+-v:
+	@ echo "Creating virtual environment with variable name"
+	@ python -m venv $(ARG)
+
+activate:
+	@ echo "Activating virtual environment"
+	@ source $(ARG)/bin/activate
+
+-V:
+	@ echo "Creating virtual environment with variable name"
+	@ pipenv shell
